@@ -1,0 +1,27 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'academics:list' %}">Marks</a><span>/</span>{{ page_title }}{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>ACADEMIC RECORDS</div><h1>{{ page_title }}</h1><p>Select the student carefully and enter the examination marks.</p></div></section>
+<section class="panel form-panel marks-form-panel">
+  <div class="form-intro"><span class="form-intro-icon">▦</span><div><h2>Examination information</h2><p>Calculated marks, percentage, grade, and result are generated securely on save.</p></div></div>
+  <div class="rule-banner"><strong>Assessment rules</strong><span>Internal 0–{{ rules.internal_max }} · External 0–{{ rules.external_max }} · Pass requires {{ rules.passing_total }} overall and {{ rules.passing_external_min }} external.</span></div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-alert" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+    {% if not form.fields.student.queryset.exists %}<div class="form-alert" role="alert">No eligible students are available for your department. {% if is_college_admin %}<a href="{% url 'students:create' %}">Register a student first.</a>{% endif %}</div>{% endif %}
+    <div class="form-grid marks-form-grid">
+      {% for field in form %}
+      <div class="field-group {% if field.name == 'student' or field.name == 'subject_name' %}field-wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="required">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="calculation-hint"><span>✓</span> Total, percentage, grade, and pass/fail status are calculated by the server and cannot be edited here.</div>
+    <div class="form-actions"><a class="button button-secondary" href="{% if record %}{% url 'academics:detail' record.pk %}{% else %}{% url 'academics:list' %}{% endif %}">Cancel</a><button class="button button-primary" type="submit" {% if not form.fields.student.queryset.exists %}disabled{% endif %}>{{ submit_label }} <span>→</span></button></div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ record.subject_code }} — {{ record.student.full_name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'academics:list' %}">Marks</a><span>/</span>Examination record{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>EXAMINATION RECORD</div><h1>{{ record.subject_name }}</h1><p>{{ record.subject_code }} · {{ record.get_semester_display }}</p></div>{% if is_college_admin or is_faculty %}<div class="heading-actions">{% if is_college_admin %}<a class="button button-secondary" href="{% url 'academics:delete' record.pk %}">Delete</a>{% endif %}<a class="button button-primary" href="{% url 'academics:update' record.pk %}">Edit marks <span>✎</span></a></div>{% endif %}</section>
+<section class="panel profile-panel marks-detail-panel">
+  <div class="profile-hero"><span class="profile-large-avatar">{{ record.student.full_name|slice:":1"|upper }}</span><div><span class="profile-kicker">STUDENT · {{ record.student.roll_number }}</span><h2>{{ record.student.full_name }}</h2><span class="department-pill">{{ record.student.department }}</span></div><span class="result-pill result-{{ record.result|lower }} detail-result">{{ record.get_result_display }}</span></div>
+  <div class="marks-score-strip"><div><span>TOTAL SCORE</span><strong>{{ record.total_marks|floatformat:2 }} <small>/ 100</small></strong></div><div><span>PERCENTAGE</span><strong>{{ record.percentage|floatformat:2 }}%</strong></div><div><span>FINAL GRADE</span><strong><span class="grade-pill grade-large">{{ record.grade }}</span></strong></div></div>
+  <div class="detail-grid">
+    <div class="detail-item"><span>SUBJECT CODE</span><strong>{{ record.subject_code }}</strong></div><div class="detail-item"><span>SUBJECT NAME</span><strong>{{ record.subject_name }}</strong></div>
+    <div class="detail-item"><span>INTERNAL EXAMINATION</span><strong>{{ record.internal_marks|floatformat:2 }} / {{ rules.internal_max|default:"30" }}</strong></div><div class="detail-item"><span>EXTERNAL EXAMINATION</span><strong>{{ record.external_marks|floatformat:2 }} / {{ rules.external_max|default:"70" }}</strong></div>
+    <div class="detail-item"><span>SEMESTER</span><strong>{{ record.get_semester_display }}</strong></div><div class="detail-item"><span>RESULT</span><strong><span class="result-pill result-{{ record.result|lower }}">{{ record.get_result_display }}</span></strong></div>
+    <div class="detail-item"><span>RECORD CREATED</span><strong>{{ record.created_at|date:"M j, Y · H:i" }}</strong></div><div class="detail-item"><span>LAST UPDATED</span><strong>{{ record.updated_at|date:"M j, Y · H:i" }}</strong></div>
+  </div>
+</section>
+<a class="back-link" href="{% url 'academics:list' %}">← Back to examination marks</a>
+{% endblock %}

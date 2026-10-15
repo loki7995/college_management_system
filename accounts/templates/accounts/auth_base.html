@@ -1,0 +1,26 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b34">
+  <title>{% block title %}Account{% endblock %} · K V S R College</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('campus-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'students/css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'students/css/campus-theme.css' %}">
+</head>
+<body class="auth-page {% block body_class %}{% endblock %}">
+  <main class="auth-shell">
+    <a class="auth-brand" href="{% url 'accounts:portal_home' %}"><span class="brand-mark">K</span><span>K V S R<span class="brand-sub">COLLEGE PORTAL</span></span></a>
+    <div class="auth-theme-control"><button type="button" class="theme-toggle" id="themeToggle" aria-pressed="false"><span class="theme-toggle-icon" aria-hidden="true">☾</span><span class="theme-toggle-label">Dark mode</span></button></div>
+    {% if messages %}<div class="messages">{% for message in messages %}<div class="message {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% block content %}{% endblock %}
+    <footer class="auth-footer">K V S R College · Protect your account and student information.</footer>
+  </main>
+  <script src="{% static 'students/js/campus-ui.js' %}" defer></script>
+</body>
+</html>

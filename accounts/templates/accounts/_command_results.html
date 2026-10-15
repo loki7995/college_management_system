@@ -1,0 +1,10 @@
+{% if query|length < 2 %}
+  <p class="command-hint">Type at least two characters to search your permitted records.</p>
+{% elif not students and not faculty and not courses and not invoices %}
+  <p class="command-empty">No matching records were found.</p>
+{% else %}
+  {% if students %}<section aria-label="Students"><h3>Students</h3>{% for student in students %}<a class="command-result" href="{% url 'students:detail' student.pk %}"><span class="student-avatar">{{ student.full_name|slice:":1"|upper }}</span><span><strong>{{ student.full_name }}</strong><small>{{ student.roll_number }} · {{ student.email }}</small></span></a>{% endfor %}</section>{% endif %}
+  {% if faculty %}<section aria-label="Faculty"><h3>Faculty</h3>{% for profile in faculty %}<a class="command-result" href="{% url 'accounts:faculty_detail' profile.pk %}"><span class="student-avatar">{{ profile.user.get_username|slice:":1"|upper }}</span><span><strong>{{ profile.user.get_full_name|default:profile.user.get_username }}</strong><small>{{ profile.department }} · {{ profile.user.email }}</small></span></a>{% endfor %}</section>{% endif %}
+  {% if courses %}<section aria-label="Courses"><h3>Courses</h3>{% for course in courses %}<a class="command-result" href="{% url 'academics:course_detail' course.pk %}"><span class="student-avatar">▤</span><span><strong>{{ course.code }} · {{ course.name }}</strong><small>{{ course.department }} · {{ course.credits }} credits</small></span></a>{% endfor %}</section>{% endif %}
+  {% if invoices %}<section aria-label="Fee receipts"><h3>Fee receipts</h3>{% for invoice in invoices %}<a class="command-result" href="{% url 'academics:fee_detail' invoice.pk %}"><span class="student-avatar">＄</span><span><strong>{{ invoice.receipt_number }}</strong><small>{{ invoice.student.roll_number }} · {{ invoice.student.full_name }}</small></span></a>{% endfor %}</section>{% endif %}
+{% endif %}

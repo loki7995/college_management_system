@@ -1,0 +1,17 @@
+{% extends 'students/base.html' %}
+{% block title %}Attendance · {{ session.course.code }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'academics:session_list' %}">Sessions</a><span>/</span>Attendance{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>{{ session.course.department|upper }}</div><h1>Class attendance</h1><p>{{ session.course.code }} · {{ session.course.name }} · {{ session.starts_at|date:"M j, Y · H:i" }} · Room {{ session.room }}</p></div></section>
+<section class="panel">
+  <div class="panel-heading"><div><span class="panel-kicker">ENROLLED STUDENTS</span><h2>{{ student_count }} student{{ student_count|pluralize }}</h2><p>Students default to Present. Change only the students with a different status.</p></div></div>
+  <form method="post">{% csrf_token %}
+    <div class="table-wrap"><table class="student-table"><thead><tr><th>STUDENT</th><th>ROLL NUMBER</th><th>ATTENDANCE STATUS</th></tr></thead><tbody>
+    {% for row in students %}
+      <tr><td>{{ row.student.full_name }}</td><td><span class="subject-code">{{ row.student.roll_number }}</span></td><td><label class="sr-only" for="student-{{ row.student.pk }}">Attendance for {{ row.student.full_name }}</label><select id="student-{{ row.student.pk }}" name="student_{{ row.student.pk }}">{% for value,label in status_choices %}<option value="{{ value }}" {% if row.attendance and row.attendance.status == value %}selected{% elif not row.attendance and value == 'PRESENT' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></td></tr>
+    {% empty %}<tr><td colspan="3">No active students are enrolled in this course and semester.</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% if students %}<div class="form-actions"><button class="button button-primary" type="submit">Save attendance</button><a class="button button-secondary" href="{% url 'academics:session_list' %}">Cancel</a></div>{% endif %}
+  </form>
+</section>
+{% endblock %}

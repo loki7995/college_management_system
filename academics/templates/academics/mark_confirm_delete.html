@@ -1,0 +1,7 @@
+{% extends 'students/base.html' %}
+{% block title %}Delete examination marks{% endblock %}
+{% block breadcrumb %}<a href="{% url 'academics:list' %}">Marks</a><span>/</span>Delete record{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>ACADEMIC RECORDS</div><h1>Delete examination record</h1><p>Review this action before continuing.</p></div></section>
+<section class="panel confirm-panel"><span class="confirm-icon">!</span><h2>Delete these marks?</h2><p>This removes <strong>{{ record.subject_code }} — {{ record.subject_name }}</strong> for <strong>{{ record.student.roll_number }} · {{ record.student.full_name }}</strong>. This action cannot be undone.</p><form method="post">{% csrf_token %}<a class="button button-secondary" href="{% url 'academics:detail' record.pk %}">Keep record</a><button class="button button-danger" type="submit">Yes, delete marks</button></form></section>
+{% endblock %}

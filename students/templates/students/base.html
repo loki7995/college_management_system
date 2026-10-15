@@ -1,0 +1,120 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b35">
+  <title>{% block title %}Students{% endblock %} · K V S R College</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('campus-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'students/css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'students/css/campus-theme.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Site navigation">
+      <a class="brand" href="{% url 'students:dashboard' %}">
+        <span class="brand-mark">K</span><span>K V S R<span class="brand-sub">COLLEGE PORTAL</span></span>
+      </a>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'students:dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="11" width="7" height="10" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/></svg></span>Dashboard</a>
+      </nav>
+      {% if is_academic_admin or is_faculty or is_student %}
+      <div class="nav-label">ACADEMIC STRUCTURE</div>
+      <nav class="side-nav" aria-label="Academic structure">
+        <a class="nav-link {% if 'course' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'academics:course_list' %}"><span class="nav-icon" aria-hidden="true">▤</span>Courses</a>
+        <a class="nav-link {% if 'semester' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'academics:semester_list' %}"><span class="nav-icon" aria-hidden="true">◷</span>Semesters</a>
+      </nav>
+      {% endif %}
+      {% if is_academic_admin or is_faculty %}
+      <div class="nav-label">PEOPLE</div>
+      <nav class="side-nav" aria-label="People">
+        <a class="nav-link {% if request.resolver_match.namespace == 'students' and request.resolver_match.url_name != 'dashboard' %}active{% endif %}" href="{% url 'students:list' %}" {% if request.resolver_match.namespace == 'students' and request.resolver_match.url_name != 'dashboard' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M17 11a3 3 0 1 0-1-5.8M18 14a5 5 0 0 1 3 4.5V20"/></svg></span>Students</a>
+        {% if is_academic_admin %}<a class="nav-link {% if request.resolver_match.namespace == 'accounts' and 'faculty' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'accounts:faculty_list' %}"><span class="nav-icon" aria-hidden="true">♙</span>Faculty</a>{% endif %}
+      </nav>
+      {% endif %}
+      {% if is_academic_admin or is_faculty or is_hod or is_student %}
+      <div class="nav-label">OPERATIONS</div>
+      <nav class="side-nav" aria-label="Academic operations">
+        <a class="nav-link {% if request.resolver_match.namespace == 'academics' and request.resolver_match.url_name == 'list' %}active{% endif %}" href="{% url 'academics:list' %}"><span class="nav-icon" aria-hidden="true">▦</span>{% if is_student %}My results{% else %}Exams &amp; grading{% endif %}</a>
+        {% if is_academic_admin or is_faculty or is_hod %}<a class="nav-link {% if 'session' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'academics:session_list' %}"><span class="nav-icon" aria-hidden="true">◷</span>Attendance &amp; timetable</a>{% endif %}
+        {% if is_academic_admin %}<a class="nav-link {% if 'event' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'academics:event_list' %}"><span class="nav-icon" aria-hidden="true">✦</span>Events</a>{% endif %}
+      </nav>
+      {% endif %}
+      {% if is_college_admin or is_finance_officer or is_student %}
+      <div class="nav-label">FINANCE</div>
+      <nav class="side-nav" aria-label="Finance">
+        <a class="nav-link {% if 'fee' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'academics:fee_list' %}"><span class="nav-icon" aria-hidden="true">＄</span>Invoices &amp; fees</a>
+      </nav>
+      {% endif %}
+      {% if is_college_admin or is_academic_admin or is_student %}
+      <div class="nav-label">COMMUNICATION</div>
+      <nav class="side-nav" aria-label="Communication">
+        <a class="nav-link {% if 'announcement' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'academics:announcement_list' %}"><span class="nav-icon" aria-hidden="true">▧</span>Announcements</a>
+      </nav>
+      {% endif %}
+      {% if is_college_admin %}
+      <div class="nav-label nav-label-secondary">SYSTEM</div>
+      <nav class="side-nav" aria-label="Administration">
+        {% if is_college_admin and request.user.is_staff %}<a class="nav-link {% if request.resolver_match.namespace == 'admin' %}active{% endif %}" href="{% url 'admin:index' %}" {% if request.resolver_match.namespace == 'admin' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span>Admin panel</a>{% endif %}
+        {% if is_college_admin %}<a class="nav-link {% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'user_list' %}active{% endif %}" href="{% url 'accounts:user_list' %}"><span class="nav-icon" aria-hidden="true">⚙</span>User accounts</a>{% endif %}
+        <a class="nav-link" href="{% url 'admin:accounts_auditentry_changelist' %}"><span class="nav-icon" aria-hidden="true">◷</span>Audit trail</a>
+        <a class="nav-link" href="{% url 'academics:announcement_list' %}"><span class="nav-icon" aria-hidden="true">▧</span>Broadcasts</a>
+      </nav>
+      {% endif %}
+      <div class="sidebar-footer">
+        <div class="help-card"><span class="help-orb" aria-hidden="true">✦</span><strong>College workspace</strong><span>Student and academic records in one place.</span></div>
+        <div class="profile">
+          {% if request.user.is_authenticated %}
+          <span class="avatar">{{ request.user.get_username|slice:":1"|upper }}</span><span class="profile-name"><strong>{{ request.user.get_username }}</strong><small>{{ current_user_role|default:"Access not assigned"|title }}</small></span>
+          {% else %}
+          <span class="avatar avatar-preview" aria-hidden="true">KV</span><span class="profile-name"><strong>Local workspace</strong><small>Authentication not enabled</small></span>
+          {% endif %}
+          {% if request.user.is_authenticated %}<a class="profile-admin" href="{% url 'accounts:password_change' %}" aria-label="Change password" title="Change password">⚿</a>{% endif %}
+        </div>
+        {% if request.user.is_authenticated %}<div class="profile-actions"><a href="{% url 'accounts:password_change' %}">Change password</a><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div>{% endif %}
+      </div>
+    </aside>
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+    <main class="main-area">
+      <header class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><span aria-hidden="true">☰</span></button>
+        <div class="topbar-title"><div class="breadcrumb">K V S R College <span>/</span> <strong>{% block breadcrumb %}Dashboard{% endblock %}</strong></div><span class="topbar-context">{% block topbar_context %}Student information system{% endblock %}</span></div>
+        <div class="topbar-right">
+          {% if request.user.is_authenticated %}<button type="button" class="command-trigger" id="commandOpen" aria-haspopup="dialog" aria-controls="commandPalette"><span aria-hidden="true">⌕</span><span>Search</span><kbd>Ctrl K</kbd></button>{% endif %}
+          <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="false"><span class="theme-toggle-icon" aria-hidden="true">☾</span><span class="theme-toggle-label">Dark mode</span></button>
+          <span class="today-chip"><span aria-hidden="true">◷</span> {% now "D, j M Y" %}</span>{% if request.user.is_authenticated %}<a class="top-user" href="{% url 'accounts:password_change' %}"><span class="top-avatar">{{ request.user.get_username|slice:":1"|upper }}</span><span class="top-user-name">{{ request.user.get_username }}</span></a>{% else %}<span class="preview-chip">Local development</span>{% endif %}
+        </div>
+      </header>
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}<div class="message {{ message.tags }}" role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}" {% if 'error' in message.tags %}aria-live="assertive"{% else %}aria-live="polite"{% endif %}><span class="message-mark" aria-hidden="true">{% if 'error' in message.tags %}!{% else %}✓{% endif %}</span>{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+      <div class="page-content">
+        {% block content %}{% endblock %}
+      </div>
+      <footer class="page-footer">© {% now "Y" %} K V S R College <span>Student information system · Please protect student privacy.</span></footer>
+    </main>
+  </div>
+  {% if request.user.is_authenticated %}
+  <dialog class="command-dialog" id="commandPalette" aria-labelledby="commandPaletteTitle">
+    <div class="command-dialog-head">
+      <strong id="commandPaletteTitle">Search college records</strong>
+      <input class="command-search-input" id="commandSearchInput" type="search" name="q" placeholder="Name, roll number, email, course, receipt…" aria-label="Search records" autocomplete="off" hx-get="{% url 'accounts:command_search' %}" hx-trigger="input changed delay:200ms, search" hx-target="#commandResults" hx-swap="innerHTML" hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'>
+      <button type="button" aria-label="Close search" onclick="document.getElementById('commandPalette').close()">×</button>
+    </div>
+    <div class="command-results" id="commandResults"><p class="command-hint">Search students, courses, faculty, or fee receipts.</p></div>
+  </dialog>
+  {% endif %}
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  <script src="{% static 'students/js/dashboard.js' %}" defer></script>
+  <script src="{% static 'students/js/campus-ui.js' %}" defer></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

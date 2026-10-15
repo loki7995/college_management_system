@@ -1,0 +1,12 @@
+{% extends 'students/base.html' %}
+{% block title %}{% if target_is_active %}Reactivate{% else %}Deactivate{% endif %} {{ student.full_name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'students:list' %}">Students</a><span>/</span><a href="{% url 'students:detail' student.pk %}">{{ student.full_name }}</a><span>/</span>Update status{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>STUDENT DIRECTORY</div><h1>{% if target_is_active %}Reactivate student{% else %}Deactivate student{% endif %}</h1><p>Review this status change before continuing.</p></div></section>
+<section class="panel confirm-panel">
+  <span class="confirm-icon">{% if target_is_active %}✓{% else %}!{% endif %}</span>
+  <h2>{% if target_is_active %}Reactivate {{ student.full_name }}?{% else %}Deactivate {{ student.full_name }}?{% endif %}</h2>
+  <p>{% if target_is_active %}This will mark <strong>{{ student.roll_number }}</strong> as active again. Their existing academic history will remain unchanged.{% else %}This will mark <strong>{{ student.roll_number }}</strong> as inactive. Their records remain available, but new marks cannot be recorded.{% endif %}</p>
+  <form method="post">{% csrf_token %}<a class="button button-secondary" href="{% url 'students:detail' student.pk %}">Cancel</a><button class="button {% if target_is_active %}button-primary{% else %}button-danger{% endif %}" type="submit">{% if target_is_active %}Reactivate student{% else %}Deactivate student{% endif %}</button></form>
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ profile.user.get_full_name|default:profile.user.get_username }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'accounts:faculty_list' %}">Faculty</a><span>/</span>Account details{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>FACULTY PROFILE</div><h1>{{ profile.user.get_full_name|default:profile.user.get_username }}</h1><p>Faculty account and department access.</p></div><div class="heading-actions"><a class="button button-secondary" href="{% url 'accounts:faculty_update' profile.pk %}">Edit account <span>✎</span></a>{% if profile.user.is_active %}<a class="button button-danger" href="{% url 'accounts:faculty_status' profile.pk 'deactivate' %}">Deactivate</a>{% else %}<a class="button button-primary" href="{% url 'accounts:faculty_status' profile.pk 'activate' %}">Activate</a>{% endif %}</div></section>
+<section class="panel profile-panel">
+  <div class="profile-hero"><span class="profile-large-avatar">{{ profile.user.get_username|slice:":1"|upper }}</span><div><span class="profile-kicker">FACULTY ACCOUNT · {{ profile.user.get_username }}</span><h2>{{ profile.user.get_full_name|default:profile.user.get_username }}</h2><span class="department-pill">{{ profile.department }}</span> <span class="student-status status-{% if profile.user.is_active %}active{% else %}inactive{% endif %}">{% if profile.user.is_active %}Active{% else %}Inactive{% endif %}</span></div></div>
+  <div class="detail-grid">
+    <div class="detail-item"><span>USERNAME</span><strong>{{ profile.user.get_username }}</strong></div><div class="detail-item"><span>EMAIL ADDRESS</span><a href="mailto:{{ profile.user.email }}">{{ profile.user.email }}</a></div>
+    <div class="detail-item"><span>DEPARTMENT</span><strong>{{ profile.department }}</strong></div><div class="detail-item"><span>ACCOUNT ROLE</span><strong>Faculty</strong></div>
+    <div class="detail-item"><span>ACCOUNT CREATED</span><strong>{{ profile.created_at|date:"M j, Y" }}</strong></div><div class="detail-item"><span>LAST PROFILE UPDATE</span><strong>{{ profile.updated_at|date:"M j, Y" }}</strong></div>
+  </div>
+</section>
+{% if password_setup_url %}
+<section class="panel setup-link-panel"><div><span class="panel-kicker">ONE-TIME PASSWORD SETUP</span><h2>Share this link securely</h2><p>This link expires and works only once. Give it directly to the faculty member; do not post it publicly.</p><a class="button button-primary setup-link-button" href="{{ password_setup_url }}" target="_blank" rel="noopener">Open password setup link <span aria-hidden="true">↗</span></a><p class="setup-link-url">{{ password_setup_url }}</p></div></section>
+{% endif %}
+<p class="grading-note">This project does not yet model faculty employee IDs, assigned subjects, or class lists.</p>
+{% endblock %}

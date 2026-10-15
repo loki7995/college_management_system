@@ -1,0 +1,25 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'accounts:faculty_list' %}">Faculty</a><span>/</span>{{ page_title }}{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>FACULTY DIRECTORY</div><h1>{{ page_title }}</h1><p>Faculty accounts use the existing Django authentication and department-scoped role.</p></div></section>
+<section class="panel form-panel">
+  <div class="form-intro"><span class="form-intro-icon">♙</span><div><h2>Faculty account information</h2><p>A one-time password setup link is generated after creation. No password is displayed or stored in plaintext.</p></div></div>
+  <div class="rule-banner"><strong>Current data model</strong><span>Department assignments are stored on the faculty role profile. Employee ID and subject/class assignments are not currently available.</span></div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-alert" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <div class="field-group {% if field.name == 'email' or field.name == 'department' %}field-wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="required">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="form-actions"><a class="button button-secondary" href="{% if profile %}{% url 'accounts:faculty_detail' profile.pk %}{% else %}{% url 'accounts:faculty_list' %}{% endif %}">Cancel</a><button class="button button-primary" type="submit">{{ submit_label }} <span>→</span></button></div>
+  </form>
+</section>
+{% endblock %}

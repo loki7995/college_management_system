@@ -1,0 +1,13 @@
+{% extends 'students/base.html' %}
+{% block title %}Finance dashboard{% endblock %}
+{% block breadcrumb %}Finance{% endblock %}
+{% block topbar_context %}College finance overview{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>FINANCE WORKSPACE</div><h1>Fee overview</h1><p>Live totals from recorded invoices and payments.</p></div><div class="heading-actions"><a class="button button-primary" href="{% url 'academics:fee_create' %}">＋ Create invoice</a></div></section>
+<section class="stats-grid dashboard-stats" aria-label="Fee summary">
+  <article class="stat-card dashboard-stat"><div class="dashboard-stat-top"><span class="stat-caption">INVOICES</span></div><div class="stat-number">{{ invoice_count }}</div><div class="dashboard-stat-foot"><span>Recorded invoices</span></div></article>
+  <article class="stat-card dashboard-stat"><div class="dashboard-stat-top"><span class="stat-caption">AMOUNT DUE</span></div><div class="stat-number">{{ amount_due|floatformat:2 }}</div><div class="dashboard-stat-foot"><span>Outstanding and settled invoice totals</span></div></article>
+  <article class="stat-card dashboard-stat"><div class="dashboard-stat-top"><span class="stat-caption">PAYMENTS COLLECTED</span></div><div class="stat-number">{{ amount_collected|floatformat:2 }}</div><div class="dashboard-stat-foot"><span>Recorded payments</span></div></article>
+</section>
+<section class="panel"><div class="panel-heading"><div><span class="panel-kicker">RECENT ACTIVITY</span><h2>Recent invoices</h2></div><a class="text-action" href="{% url 'academics:fee_list' %}">View all →</a></div><div class="table-wrap"><table class="student-table"><thead><tr><th>RECEIPT</th><th>STUDENT</th><th>AMOUNT DUE</th><th>BALANCE</th><th>STATUS</th></tr></thead><tbody>{% for invoice in recent_invoices %}<tr><td><a class="text-action subject-code" href="{% url 'academics:fee_detail' invoice.pk %}">{{ invoice.receipt_number|slice:":12" }}</a></td><td>{{ invoice.student.full_name }}<small class="subject-code">{{ invoice.student.roll_number }}</small></td><td>{{ invoice.amount_due|floatformat:2 }}</td><td>{{ invoice.balance|floatformat:2 }}</td><td><span class="result-pill result-{{ invoice.status|lower }}">{{ invoice.status|title }}</span></td></tr>{% empty %}<tr><td colspan="5">No invoices recorded yet.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

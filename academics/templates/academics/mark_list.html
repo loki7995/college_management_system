@@ -1,0 +1,33 @@
+{% extends 'students/base.html' %}
+{% block title %}Academic marks{% endblock %}
+{% block breadcrumb %}Marks{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>ACADEMIC RECORDS</div><h1>{% if is_student %}My examination results{% else %}Examination marks{% endif %}</h1><p>{% if is_student %}Review your examination results and academic progress.{% else %}Review and manage student examination results.{% endif %}</p></div>{% if is_college_admin or is_faculty %}<a class="button button-primary" href="{% url 'academics:create' %}"><span class="button-plus">＋</span> Add marks</a>{% endif %}</section>
+<section class="panel directory-panel marks-panel">
+  <div class="panel-heading"><div><h2>All examination records</h2><p>Search by student or subject and narrow results by semester, department, or outcome.</p></div><span class="record-count">{{ page_obj.paginator.count }} record{{ page_obj.paginator.count|pluralize }}</span></div>
+  <form method="get" class="marks-filters" role="search">
+    <label class="search-field marks-search"><span aria-hidden="true">⌕</span><input type="search" name="q" value="{{ query }}" placeholder="Student, roll number, subject…" aria-label="Search marks"></label>
+    <select name="semester" aria-label="Filter by semester"><option value="">All semesters</option>{% for value,label in semester_choices %}<option value="{{ value }}" {% if selected_semester == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <select name="department" aria-label="Filter by department"><option value="">All departments</option>{% for item in departments %}<option value="{{ item }}" {% if selected_department == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+    <select name="academic_year" aria-label="Filter by academic year"><option value="">All academic years</option>{% for item in academic_year_choices %}<option value="{{ item }}" {% if selected_academic_year == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+    <select name="result" aria-label="Filter by result"><option value="">All results</option>{% for value,label in result_choices %}<option value="{{ value }}" {% if selected_result == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <button class="button button-primary filter-submit" type="submit">Filter</button>
+    {% if query or selected_semester or selected_department or selected_academic_year or selected_result %}<a class="clear-filter" href="{% url 'academics:list' %}">Clear all</a>{% endif %}
+  </form>
+  {% if records %}
+  <div class="table-wrap"><table class="student-table marks-table"><thead><tr><th>STUDENT</th><th>SUBJECT</th><th>SEMESTER</th><th>INTERNAL</th><th>EXTERNAL</th><th>TOTAL</th><th>GRADE</th><th>RESULT</th><th></th></tr></thead><tbody>
+    {% for record in records %}
+    <tr>
+      <td><a class="student-cell" href="{% url 'academics:detail' record.pk %}"><span class="student-avatar">{{ record.student.full_name|slice:":1"|upper }}</span><span><strong>{{ record.student.full_name }}</strong><small>{{ record.student.roll_number }}</small></span></a></td>
+      <td><span class="subject-name">{{ record.subject_name }}</span><small class="subject-code">{{ record.subject_code }}</small></td><td>{{ record.get_semester_display }}</td><td>{{ record.internal_marks|floatformat:2 }} / {{ rules.internal_max|floatformat:0 }}</td><td>{{ record.external_marks|floatformat:2 }} / {{ rules.external_max|floatformat:0 }}</td><td><strong>{{ record.total_marks|floatformat:2 }}</strong> / 100</td><td><span class="grade-pill">{{ record.grade }}</span></td><td><span class="result-pill result-{{ record.result|lower }}">{{ record.get_result_display }}</span></td>
+      <td><div class="row-actions"><a href="{% url 'academics:detail' record.pk %}" aria-label="View record" title="View">↗</a>{% if is_college_admin or is_faculty %}<a href="{% url 'academics:update' record.pk %}" aria-label="Edit record" title="Edit">✎</a>{% endif %}</div></td>
+    </tr>
+    {% endfor %}
+  </tbody></table></div>
+  {% else %}
+  <div class="empty-state"><span class="empty-icon">▦</span><strong>{% if query or selected_semester or selected_department or selected_academic_year or selected_result %}No results match these filters{% else %}{% if is_student %}No examination results yet{% else %}No examination marks recorded yet{% endif %}{% endif %}</strong><p>{% if query or selected_semester or selected_department or selected_academic_year or selected_result %}Adjust or clear your filters and try again.{% elif not is_student %}Choose a student and add the first examination result.{% else %}Your examination results will appear here when they are recorded.{% endif %}</p>{% if not is_student and not query and not selected_semester and not selected_department and not selected_academic_year and not selected_result %}<a class="button button-primary" href="{% url 'academics:create' %}">＋ Add examination marks</a>{% endif %}</div>
+  {% endif %}
+  {% if page_obj.paginator.count %}<div class="table-foot marks-table-foot"><span>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Pagination">{% if page_obj.has_previous %}<a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous page">‹</a>{% else %}<span class="page-disabled">‹</span>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next page">›</a>{% else %}<span class="page-disabled">›</span>{% endif %}</nav>{% endif %}</div>{% endif %}
+</section>
+<p class="grading-note">Grading: internal up to {{ rules.internal_max }}, external up to {{ rules.external_max }}. Pass requires at least {{ rules.passing_total }} total and {{ rules.passing_external_min }} external marks.</p>
+{% endblock %}

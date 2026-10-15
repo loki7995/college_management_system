@@ -1,0 +1,40 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow"><span class="eyebrow-line"></span>COLLEGE WORKSPACE</div><h1>{{ page_title }}</h1><p>{{ page_description }}</p></div>
+  {% if can_add %}<div class="heading-actions">
+    {% if list_kind == 'course' %}<a class="button button-primary" href="{% url 'academics:course_create' %}">＋ Add course</a>
+    {% elif list_kind == 'semester' %}<a class="button button-primary" href="{% url 'academics:semester_create' %}">＋ Add semester</a>
+    {% elif list_kind == 'session' %}<a class="button button-primary" href="{% url 'academics:session_create' %}">＋ Schedule class</a>
+    {% elif list_kind == 'fee' %}<a class="button button-primary" href="{% url 'academics:fee_create' %}">＋ Create invoice</a>
+    {% elif list_kind == 'event' %}<a class="button button-primary" href="{% url 'academics:event_create' %}">＋ Add event</a>
+    {% elif list_kind == 'announcement' %}<a class="button button-primary" href="{% url 'academics:announcement_create' %}">＋ Publish notice</a>{% endif %}
+  </div>{% endif %}
+</section>
+<section class="panel">
+  <form method="get" class="student-filter-form">
+    {% if list_kind == 'course' or list_kind == 'session' %}<label class="search-field"><span class="sr-only">Search records</span><input type="search" name="q" value="{{ query }}" placeholder="Search records…" autocomplete="off"></label><button class="button button-secondary" type="submit">Search</button>{% endif %}
+    {% if list_kind == 'fee' %}<label>Invoice status <select name="status"><option value="">All statuses</option>{% for value,label in fee_status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label class="search-field"><span class="sr-only">Search invoices</span><input type="search" name="q" value="{{ query }}" placeholder="Student or receipt number"></label><button class="button button-secondary" type="submit">Filter</button>{% endif %}
+  </form>
+  <div class="table-wrap"><table class="student-table"><thead>
+    {% if list_kind == 'course' %}<tr><th>CODE</th><th>COURSE</th><th>DEPARTMENT</th><th>CREDITS</th><th></th></tr>
+    {% elif list_kind == 'semester' %}<tr><th>ACADEMIC YEAR</th><th>SEMESTER</th><th>DATES</th><th>STATUS</th></tr>
+    {% elif list_kind == 'session' %}<tr><th>COURSE</th><th>FACULTY</th><th>ROOM</th><th>STARTS</th><th></th></tr>
+    {% elif list_kind == 'fee' %}<tr><th>RECEIPT</th><th>STUDENT</th><th>AMOUNT DUE</th><th>BALANCE</th><th>STATUS</th><th>DUE</th></tr>
+    {% elif list_kind == 'event' %}<tr><th>EVENT</th><th>TYPE</th><th>DEPARTMENT</th><th>STARTS</th></tr>
+    {% elif list_kind == 'announcement' %}<tr><th>ANNOUNCEMENT</th><th>TARGET</th><th>POSTED</th></tr>{% endif %}
+  </thead><tbody>
+    {% for record in records %}
+      {% if list_kind == 'course' %}<tr><td><span class="subject-code">{{ record.code }}</span></td><td><a class="text-action" href="{% url 'academics:course_detail' record.pk %}">{{ record.name }}</a></td><td>{{ record.department }}</td><td>{{ record.credits }}</td><td><a class="text-action" href="{% url 'academics:course_detail' record.pk %}">Details →</a></td></tr>
+      {% elif list_kind == 'semester' %}<tr><td>{{ record.academic_year }}</td><td>Semester {{ record.number }}</td><td>{{ record.starts_on|date:"M j, Y" }} – {{ record.ends_on|date:"M j, Y" }}</td><td><span class="student-status status-{% if record.is_active %}active{% else %}inactive{% endif %}">{% if record.is_active %}Active{% else %}Inactive{% endif %}</span></td></tr>
+      {% elif list_kind == 'session' %}<tr><td><strong>{{ record.course.code }}</strong><small class="subject-code">{{ record.course.name }} · Semester {{ record.semester.number }}</small></td><td>{{ record.faculty.user.get_full_name|default:record.faculty.user.username }}</td><td>{{ record.room }}</td><td>{{ record.starts_at|date:"M j, Y · H:i" }}</td><td><a class="text-action" href="{% url 'academics:attendance' record.pk %}">Take attendance →</a></td></tr>
+      {% elif list_kind == 'fee' %}<tr><td><a class="text-action subject-code" href="{% url 'academics:fee_detail' record.pk %}">{{ record.receipt_number|slice:":12" }}</a><small class="subject-code">{{ record.get_fee_type_display }}</small></td><td>{{ record.student.full_name }}<small class="subject-code">{{ record.student.roll_number }}</small></td><td>{{ record.amount_due|floatformat:2 }}</td><td>{{ record.balance|floatformat:2 }}</td><td><span class="result-pill result-{{ record.status|lower }}">{{ record.get_status_display|default:record.status|title }}</span></td><td>{{ record.due_date|date:"M j, Y" }}</td></tr>
+      {% elif list_kind == 'event' %}<tr><td><strong>{{ record.title }}</strong><small class="subject-code">{{ record.description|truncatewords:16 }}</small></td><td>{{ record.get_kind_display }}</td><td>{{ record.department|default:"All departments" }}</td><td>{{ record.starts_at|date:"M j, Y · H:i" }}</td></tr>
+      {% elif list_kind == 'announcement' %}<tr><td><strong>{{ record.title }}</strong><small class="subject-code">{{ record.body|truncatewords:18 }}</small></td><td>{% if record.student %}{{ record.student.roll_number }}{% else %}{{ record.department|default:"College-wide" }}{% if record.academic_year %} · {{ record.academic_year }}{% endif %}{% endif %}</td><td>{{ record.created_at|date:"M j, Y" }}</td></tr>{% endif %}
+    {% empty %}<tr><td colspan="6"><div class="empty-state compact-empty"><strong>No records to show</strong><p>Records will appear here when they are added.</p></div></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Pagination">{% if page_obj.has_previous %}<a href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+</section>
+{% endblock %}

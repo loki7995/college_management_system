@@ -1,0 +1,7 @@
+{% extends 'students/base.html' %}
+{% block title %}Upload document · {{ student.full_name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'students:detail' student.pk %}">{{ student.full_name }}</a><span>/</span>Upload document{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>PRIVATE STUDENT FILE</div><h1>Upload a document</h1><p>PDF, JPG, or PNG files up to 5 MB are accepted.</p></div></section>
+<section class="panel form-panel"><form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}{% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div class="form-field {% if field.errors %}has-error{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}</div>{% endfor %}<div class="form-actions"><button class="button button-primary" type="submit">Upload securely</button><a class="button button-secondary" href="{% url 'students:detail' student.pk %}">Cancel</a></div></form></section>
+{% endblock %}

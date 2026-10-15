@@ -1,0 +1,34 @@
+{% extends 'students/base.html' %}
+{% block title %}Faculty directory{% endblock %}
+{% block breadcrumb %}Faculty{% endblock %}
+{% block topbar_context %}Manage faculty accounts and department access{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow"><span class="eyebrow-line"></span>FACULTY DIRECTORY</div><h1>Faculty</h1><p>Manage faculty portal access and department assignments.</p></div>
+  <a class="button button-primary" href="{% url 'accounts:faculty_create' %}"><span class="button-plus">＋</span> Add faculty</a>
+</section>
+<section class="panel directory-panel">
+  <div class="panel-heading"><div><span class="panel-kicker">FACULTY ACCOUNTS</span><h2>All faculty</h2><p>Faculty profiles use the existing college account and department model.</p></div><span class="record-count">{{ page_obj.paginator.count }} account{{ page_obj.paginator.count|pluralize }}</span></div>
+  <form method="get" class="toolbar" role="search">
+    <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" name="q" value="{{ query }}" placeholder="Name, username, email, department…" aria-label="Search faculty"><button class="search-clear" type="submit">Search</button></label>
+    <select name="department" aria-label="Filter by department"><option value="">All departments</option>{% for item in departments %}<option value="{{ item }}" {% if selected_department == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+    <select name="status" aria-label="Filter by account status"><option value="">All statuses</option><option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option><option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option></select>
+    <button class="button button-primary filter-submit" type="submit">Filter</button>
+    {% if query or selected_department or selected_status %}<a class="clear-filter" href="{% url 'accounts:faculty_list' %}">Clear all</a>{% endif %}
+  </form>
+  {% if profiles %}
+  <div class="table-wrap"><table class="student-table"><thead><tr><th>FACULTY</th><th>USERNAME</th><th>EMAIL</th><th>DEPARTMENT</th><th>STATUS</th><th></th></tr></thead><tbody>
+    {% for profile in profiles %}<tr>
+      <td><a class="student-cell" href="{% url 'accounts:faculty_detail' profile.pk %}"><span class="student-avatar">{{ profile.user.get_username|slice:":1"|upper }}</span><span><strong>{{ profile.user.get_full_name|default:profile.user.get_username }}</strong><small>Faculty account</small></span></a></td>
+      <td><span class="roll-chip">{{ profile.user.get_username }}</span></td><td class="table-email">{{ profile.user.email }}</td><td>{{ profile.department }}</td>
+      <td><span class="student-status status-{% if profile.user.is_active %}active{% else %}inactive{% endif %}">{% if profile.user.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+      <td><div class="row-actions"><a href="{% url 'accounts:faculty_detail' profile.pk %}" aria-label="View faculty account">↗</a><a href="{% url 'accounts:faculty_update' profile.pk %}" aria-label="Edit faculty account">✎</a></div></td>
+    </tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}
+  <div class="empty-state"><span class="empty-icon">♙</span><strong>{% if query or selected_department or selected_status %}No faculty match these filters{% else %}No faculty accounts yet{% endif %}</strong><p>{% if query or selected_department or selected_status %}Adjust your search or filters and try again.{% else %}Add the first faculty account to provide secure, department-scoped access.{% endif %}</p>{% if not query and not selected_department and not selected_status %}<a class="button button-primary" href="{% url 'accounts:faculty_create' %}">＋ Add faculty</a>{% endif %}</div>
+  {% endif %}
+  {% if page_obj.paginator.count %}<div class="table-foot"><span>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Faculty pagination">{% if page_obj.has_previous %}<a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous page">‹</a>{% else %}<span class="page-disabled">‹</span>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next page">›</a>{% else %}<span class="page-disabled">›</span>{% endif %}</nav>{% endif %}</div>{% endif %}
+</section>
+<p class="grading-note">Faculty are linked to Django accounts and departments. Employee IDs, subjects, and class assignments are not modeled yet.</p>
+{% endblock %}

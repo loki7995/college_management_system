@@ -1,0 +1,138 @@
+:root {
+  color-scheme: light;
+  --campus-primary: #1e3a8a;
+  --campus-primary-hover: #172f70;
+  --campus-accent: #0d9488;
+  --campus-accent-hover: #0f766e;
+  --campus-canvas: #f8fafc;
+  --campus-card: #ffffff;
+  --campus-text: #0f172a;
+  --campus-muted: #475569;
+  --campus-line: #e2e8f0;
+  --campus-header: #f1f5f9;
+  --campus-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --campus-primary: #3b82f6;
+  --campus-primary-hover: #60a5fa;
+  --campus-accent: #14b8a6;
+  --campus-accent-hover: #2dd4bf;
+  --campus-canvas: #0f172a;
+  --campus-card: #1e293b;
+  --campus-text: #f8fafc;
+  --campus-muted: #94a3b8;
+  --campus-line: #334155;
+  --campus-header: #172338;
+  --campus-shadow: 0 10px 30px rgba(2, 6, 23, .24);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --campus-primary: #3b82f6;
+    --campus-primary-hover: #60a5fa;
+    --campus-accent: #14b8a6;
+    --campus-accent-hover: #2dd4bf;
+    --campus-canvas: #0f172a;
+    --campus-card: #1e293b;
+    --campus-text: #f8fafc;
+    --campus-muted: #94a3b8;
+    --campus-line: #334155;
+    --campus-header: #172338;
+    --campus-shadow: 0 10px 30px rgba(2, 6, 23, .24);
+  }
+}
+html, body { background: var(--campus-canvas); color: var(--campus-text); }
+body { font-family: Inter, "Segoe UI", sans-serif; }
+.main-area { background: var(--campus-canvas); }
+.sidebar { background: #172554; }
+.topbar, .panel, .stat-card, .auth-card, .portal-card, .portal-signed-in,
+.setup-link-panel, .form-panel, .profile-panel, .confirm-panel {
+  background-color: var(--campus-card);
+  border-color: var(--campus-line);
+  box-shadow: var(--campus-shadow);
+}
+.topbar { border-bottom-color: var(--campus-line); }
+.page-content, .page-footer { color: var(--campus-text); }
+.eyebrow, .panel-kicker { color: var(--campus-muted); }
+.page-heading h1, .panel-heading h2, .form-intro h2, .profile-hero h2,
+.detail-item strong, .student-cell strong, .portal-welcome h1, .portal-card h2,
+.auth-card h1, .setup-link-panel h2 { color: var(--campus-text); }
+.page-heading p, .panel-heading p, .form-intro p, .auth-intro, .auth-help,
+.portal-welcome p, .portal-card p, .detail-item > span, .field-hint,
+.grading-note, .student-cell small { color: var(--campus-muted); }
+.button-primary { background: var(--campus-primary); border-color: var(--campus-primary); color: #fff; }
+.button-primary:hover { background: var(--campus-primary-hover); border-color: var(--campus-primary-hover); color: #fff; }
+.button-secondary { background: var(--campus-card); border-color: var(--campus-line); color: var(--campus-text); }
+.button-secondary:hover { background: var(--campus-header); color: var(--campus-text); }
+.button-accent, .status-paid, .status-present { background: #d1fae5; color: #065f46; }
+.status-pending, .status-partial, .status-on-leave { background: #fef3c7; color: #92400e; }
+.status-overdue, .status-absent { background: #ffe4e6; color: #9f1239; }
+.toolbar { border-bottom-color: var(--campus-line); }
+.toolbar select, .search-field, .field-group input, .field-group textarea, .field-group select {
+  background-color: var(--campus-card);
+  border-color: var(--campus-line);
+  color: var(--campus-text);
+}
+.student-table { color: var(--campus-text); }
+.student-table th { background: var(--campus-header); color: var(--campus-muted); position: sticky; top: 0; z-index: 2; }
+.student-table td { border-bottom-color: var(--campus-line); color: var(--campus-muted); }
+.student-table tbody tr:hover { background: color-mix(in srgb, var(--campus-primary) 5%, var(--campus-card)); }
+.table-wrap { max-height: min(68vh, 760px); }
+.student-table td:last-child { position: sticky; right: 0; z-index: 1; }
+.student-table tbody tr td:last-child { background: var(--campus-card); }
+.student-table tbody tr:hover td:last-child { background: color-mix(in srgb, var(--campus-primary) 5%, var(--campus-card)); }
+.record-count, .roll-chip { background: var(--campus-header); color: var(--campus-muted); }
+.empty-state strong { color: var(--campus-text); }
+.empty-state p { color: var(--campus-muted); }
+.profile-hero, .rule-banner, .student-performance-summary { background: var(--campus-header); border-color: var(--campus-line); }
+.detail-grid, .detail-item + .detail-item, .form-intro, .form-actions { border-color: var(--campus-line); }
+.detail-item a, .text-action, .clear-filter, .auth-back-link, .portal-signed-in button { color: var(--campus-primary); }
+.department-pill { background: color-mix(in srgb, var(--campus-primary) 12%, var(--campus-card)); color: var(--campus-primary); }
+.student-status.status-active, .student-status.status-present { background: #d1fae5; color: #065f46; }
+.student-status.status-inactive { background: var(--campus-header); color: var(--campus-muted); }
+.field-error { color: #be123c; }
+.theme-toggle { align-items: center; background: var(--campus-card); border: 1px solid var(--campus-line); border-radius: 9px; color: var(--campus-text); cursor: pointer; display: inline-flex; font-size: 11px; gap: 7px; min-height: 33px; padding: 0 10px; }
+.theme-toggle:hover { border-color: var(--campus-primary); }
+.theme-toggle:focus-visible, .button:focus-visible, .nav-link:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--campus-primary) 35%, transparent); outline: 2px solid transparent; outline-offset: 2px; }
+.toolbar input:focus, .toolbar select:focus, .field-group input:focus, .field-group textarea:focus, .field-group select:focus { border-color: var(--campus-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--campus-primary) 18%, transparent); outline: 0; }
+.nav-link.active { background: color-mix(in srgb, var(--campus-primary) 28%, transparent); }
+.nav-link.active::before { background: #60a5fa; }
+.brand-mark { background: var(--campus-primary); color: #fff; }
+.portal-card { border-top-color: var(--campus-primary); }
+.auth-page { background: radial-gradient(ellipse at top, var(--campus-card), var(--campus-canvas)); }
+.message.success { background: #d1fae5; color: #065f46; }
+.message.error { background: #ffe4e6; color: #9f1239; }
+.command-dialog { background: var(--campus-card); border: 1px solid var(--campus-line); border-radius: 16px; box-shadow: 0 24px 80px rgba(2, 6, 23, .35); color: var(--campus-text); margin: 12vh auto auto; max-height: 75vh; max-width: min(650px, calc(100vw - 28px)); overflow: auto; padding: 0; width: 100%; }
+.command-dialog::backdrop { background: rgba(15, 23, 42, .56); backdrop-filter: blur(3px); }
+.command-dialog-head { align-items: center; border-bottom: 1px solid var(--campus-line); display: flex; gap: 12px; padding: 17px 19px; }
+.command-dialog-head strong { font: 700 13px Inter, sans-serif; }
+.command-dialog-head button { background: transparent; border: 0; color: var(--campus-muted); cursor: pointer; font-size: 19px; margin-left: auto; }
+.command-search-input { background: transparent; border: 0; color: var(--campus-text); flex: 1; font: 14px Inter, sans-serif; min-width: 0; outline: 0; }
+.command-results { max-height: 55vh; overflow-y: auto; padding: 9px; }
+.command-results h3 { color: var(--campus-muted); font-size: 9px; letter-spacing: .1em; margin: 14px 10px 5px; text-transform: uppercase; }
+.command-result { align-items: center; border-radius: 8px; color: var(--campus-text); display: flex; gap: 10px; padding: 10px; }
+.command-result:hover, .command-result:focus-visible { background: color-mix(in srgb, var(--campus-primary) 10%, var(--campus-card)); outline: 0; }
+.command-result strong, .command-result small { display: block; }
+.command-result strong { font-size: 12px; }
+.command-result small, .command-empty, .command-hint { color: var(--campus-muted); font-size: 10px; }
+.command-empty, .command-hint { padding: 16px 10px; }
+.portal-page .auth-shell { max-width: 1040px; }
+.portal-grid { gap: 18px; }
+.portal-card { border-radius: 12px; padding: 24px; }
+@media (prefers-color-scheme: dark) {
+  .status-paid, .status-present, .student-status.status-active { background: #064e3b; color: #a7f3d0; }
+  .status-pending, .status-partial, .status-on-leave { background: #78350f; color: #fde68a; }
+  .status-overdue, .status-absent, .student-status.status-inactive { background: #881337; color: #fecdd3; }
+}
+:root[data-theme="dark"] .status-paid, :root[data-theme="dark"] .status-present,
+:root[data-theme="dark"] .student-status.status-active { background: #064e3b; color: #a7f3d0; }
+:root[data-theme="dark"] .status-pending, :root[data-theme="dark"] .status-partial,
+:root[data-theme="dark"] .status-on-leave { background: #78350f; color: #fde68a; }
+:root[data-theme="dark"] .status-overdue, :root[data-theme="dark"] .status-absent,
+:root[data-theme="dark"] .student-status.status-inactive { background: #881337; color: #fecdd3; }
+@media (max-width: 760px) {
+  .table-wrap { max-height: 65vh; }
+  .theme-toggle-label { display: none; }
+  .topbar-right { gap: 6px; }
+}

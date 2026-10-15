@@ -1,0 +1,32 @@
+{% extends 'students/base.html' %}
+{% block title %}My dashboard{% endblock %}
+{% block breadcrumb %}My dashboard{% endblock %}
+{% block topbar_context %}Your student account and academic progress{% endblock %}
+{% block content %}
+<section class="page-heading dashboard-heading">
+  <div>
+    <div class="eyebrow"><span class="eyebrow-line"></span>STUDENT WORKSPACE</div>
+    <h1>Welcome, {{ student.full_name }}<span class="heading-sparkle" aria-hidden="true">✦</span></h1>
+    <p>{{ student.roll_number }} · {{ student.department }} · {{ student.academic_year }}</p>
+  </div>
+  <div class="heading-actions dashboard-actions">
+    <a class="button button-secondary" href="{% url 'students:detail' student.pk %}">My profile</a>
+    <a class="button button-primary" href="{% url 'academics:list' %}">View my results</a>
+  </div>
+</section>
+<section class="stats-grid dashboard-stats" aria-label="Academic summary">
+  <article class="stat-card dashboard-stat"><div class="dashboard-stat-top"><span class="stat-icon icon-purple" aria-hidden="true">▦</span><span class="stat-caption">EXAMINATION RECORDS</span></div><div class="stat-number">{{ marks_count }}</div><div class="dashboard-stat-foot"><span>Recorded results</span></div></article>
+  <article class="stat-card dashboard-stat"><div class="dashboard-stat-top"><span class="stat-icon icon-green" aria-hidden="true">✓</span><span class="stat-caption">PASS RATE</span></div><div class="stat-number">{{ pass_percentage }}<span class="stat-suffix">%</span></div><div class="dashboard-stat-foot"><span>{{ passed_count }} passed · {{ failed_count }} failed</span></div></article>
+  <article class="stat-card dashboard-stat"><div class="dashboard-stat-top"><span class="stat-icon icon-blue" aria-hidden="true">↗</span><span class="stat-caption">AVERAGE PERCENTAGE</span></div><div class="stat-number">{% if average_percentage is not None %}{{ average_percentage|floatformat:1 }}{% else %}—{% endif %}<span class="stat-suffix">{% if average_percentage is not None %}%{% endif %}</span></div><div class="dashboard-stat-foot"><span>Across your recorded results</span></div></article>
+</section>
+<section class="panel dashboard-list-panel">
+  <div class="panel-heading dashboard-panel-heading"><div><span class="panel-kicker">ACADEMIC RECORDS</span><h2>Recent examination results</h2><p>Your latest recorded marks</p></div><a class="text-action" href="{% url 'academics:list' %}">View all <span aria-hidden="true">→</span></a></div>
+  <div class="table-wrap"><table class="student-table dashboard-table"><thead><tr><th>SUBJECT</th><th>SEMESTER</th><th>TOTAL</th><th>GRADE</th><th>RESULT</th><th></th></tr></thead><tbody>
+    {% for mark in recent_results %}
+    <tr><td><span class="subject-name">{{ mark.subject_name }}</span><small class="subject-code">{{ mark.subject_code }}</small></td><td>{{ mark.get_semester_display }}</td><td><strong>{{ mark.total_marks|floatformat:2 }}</strong> / 100</td><td><span class="grade-pill">{{ mark.grade }}</span></td><td><span class="result-pill result-{{ mark.result|lower }}">{{ mark.get_result_display }}</span></td><td><a class="text-action" href="{% url 'academics:detail' mark.pk %}">Details →</a></td></tr>
+    {% empty %}
+    <tr><td colspan="6"><div class="empty-state compact-empty"><span class="empty-icon" aria-hidden="true">▦</span><strong>No examination results yet</strong><p>Your marks will appear here after they are recorded by faculty.</p></div></td></tr>
+    {% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

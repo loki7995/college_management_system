@@ -1,0 +1,52 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ student.full_name }}{% endblock %}
+{% block breadcrumb %}{% if is_student %}<a href="{% url 'students:dashboard' %}">Dashboard</a>{% else %}<a href="{% url 'students:list' %}">Students</a>{% endif %}<span>/</span>{{ student.full_name }}{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>{% if is_student %}MY PROFILE{% else %}STUDENT PROFILE{% endif %}</div><h1>{{ student.full_name }}</h1><p>Student record and contact information.</p></div>{% if is_academic_admin %}<div class="heading-actions">{% if student.is_active and has_marks or student.is_active and has_account %}<a class="button button-secondary" href="{% url 'students:status' student.pk 'inactive' %}">Deactivate</a>{% elif not student.is_active %}<a class="button button-secondary" href="{% url 'students:status' student.pk 'active' %}">Reactivate</a>{% else %}<a class="button button-secondary" href="{% url 'students:delete' student.pk %}">Delete</a>{% endif %}{% if not has_account %}<a class="button button-secondary" href="{% url 'accounts:student_account_create' student.pk %}">Create login</a>{% endif %}<a class="button button-primary" href="{% url 'students:update' student.pk %}">Edit student <span>✎</span></a></div>{% endif %}</section>
+{% if student_password_setup_url %}<section class="panel setup-link-panel student-setup-panel"><div><span class="panel-kicker">ONE-TIME PASSWORD SETUP</span><h2>Share this link securely</h2><p>The link works once and gives access only to this student account. Share it directly with the student.</p><a class="button button-primary setup-link-button" href="{{ student_password_setup_url }}" target="_blank" rel="noopener">Open password setup link <span aria-hidden="true">↗</span></a><p class="setup-link-url">{{ student_password_setup_url }}</p></div></section>{% endif %}
+<section class="panel profile-panel">
+  <div class="profile-hero"><span class="profile-large-avatar">{{ student.full_name|slice:":1"|upper }}</span><div><span class="profile-kicker">ROLL NUMBER · {{ student.roll_number }}</span><h2>{{ student.full_name }}</h2><span class="department-pill">{{ student.department }}</span> <span class="student-status status-{% if student.is_active %}active{% else %}inactive{% endif %}">{% if student.is_active %}Active{% else %}Inactive{% endif %}</span></div></div>
+  <div class="detail-grid">
+    <div class="detail-item"><span>EMAIL ADDRESS</span><a href="mailto:{{ student.email }}">{{ student.email }}</a></div>
+    <div class="detail-item"><span>PHONE NUMBER</span><strong>{{ student.phone_number|default:"Not provided" }}</strong></div>
+    <div class="detail-item"><span>ACADEMIC YEAR</span><strong>{{ student.academic_year }}</strong></div>
+    <div class="detail-item"><span>DATE OF BIRTH</span><strong>{{ student.date_of_birth|date:"F j, Y"|default:"Not provided" }}</strong></div>
+    <div class="detail-item detail-wide"><span>ADDRESS</span><strong>{{ student.address|linebreaksbr|default:"Not provided" }}</strong></div>
+    <div class="detail-item"><span>RECORD CREATED</span><strong>{{ student.created_at|date:"M j, Y · H:i" }}</strong></div>
+    <div class="detail-item"><span>LAST UPDATED</span><strong>{{ student.updated_at|date:"M j, Y · H:i" }}</strong></div>
+  </div>
+</section>
+<section class="panel student-academic-panel">
+  <div class="panel-heading"><div><span class="panel-kicker">ACADEMIC PROFILE</span><h2>Examination history</h2><p>Recent marks and overall results for this student.</p></div><a class="button button-secondary" href="{% url 'academics:list' %}?q={{ student.roll_number|urlencode }}">{% if is_student %}View all results{% else %}View all marks{% endif %}</a></div>
+  {% if mark_summary.record_count %}
+  <div class="student-performance-summary">
+    <div><span>EXAMINATION RECORDS</span><strong>{{ mark_summary.record_count }}</strong></div>
+    <div><span>PASS RATE</span><strong>{{ pass_percentage }}%</strong></div>
+    <div><span>AVERAGE</span><strong>{{ mark_summary.average_percentage|floatformat:1 }}%</strong></div>
+  </div>
+  <div class="table-wrap"><table class="student-table student-history-table"><thead><tr><th>SUBJECT</th><th>SEMESTER</th><th>TOTAL</th><th>GRADE</th><th>RESULT</th><th></th></tr></thead><tbody>
+    {% for mark in recent_marks %}
+    <tr><td><span class="subject-name">{{ mark.subject_name }}</span><small class="subject-code">{{ mark.subject_code }}</small></td><td>{{ mark.get_semester_display }}</td><td><strong>{{ mark.total_marks|floatformat:2 }}</strong> / 100</td><td><span class="grade-pill">{{ mark.grade }}</span></td><td><span class="result-pill result-{{ mark.result|lower }}">{{ mark.get_result_display }}</span></td><td><a class="text-action" href="{% url 'academics:detail' mark.pk %}">Details →</a></td></tr>
+    {% endfor %}
+  </tbody></table></div>
+  {% else %}
+  <div class="empty-state compact-empty"><span class="empty-icon" aria-hidden="true">▦</span><strong>No examination records yet</strong><p>Marks recorded for this student will appear here.</p>{% if student.is_active and not is_student and not is_faculty %}<a class="button button-primary" href="{% url 'academics:create' %}">＋ Record marks</a>{% elif student.is_active and is_faculty %}<a class="button button-primary" href="{% url 'academics:create' %}">＋ Record marks</a>{% endif %}</div>
+  {% endif %}
+</section>
+<section class="panel student-academic-panel">
+  <div class="panel-heading"><div><span class="panel-kicker">ACADEMIC PROFILE</span><h2>Course enrolments</h2><p>Courses and semesters associated with this student.</p></div></div>
+  <div class="table-wrap"><table class="student-table"><thead><tr><th>COURSE</th><th>DEPARTMENT</th><th>SEMESTER</th></tr></thead><tbody>{% for enrollment in enrollments %}<tr><td><a class="text-action" href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.code }} · {{ enrollment.course.name }}</a></td><td>{{ enrollment.course.department }}</td><td>{{ enrollment.semester }}</td></tr>{% empty %}<tr><td colspan="3">No course enrolments are recorded.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+<section class="panel student-academic-panel">
+  <div class="panel-heading"><div><span class="panel-kicker">ATTENDANCE</span><h2>Class attendance</h2></div></div>
+  <div class="student-performance-summary"><div><span>ATTENDANCE RATE</span><strong>{% if attendance_percentage != None %}{{ attendance_percentage }}%{% else %}—{% endif %}</strong></div><div><span>NON-EXCUSED SESSIONS</span><strong>{{ attendance_total }}</strong></div></div>
+</section>
+{% if can_view_fees %}<section class="panel student-academic-panel">
+  <div class="panel-heading"><div><span class="panel-kicker">FINANCE</span><h2>Fee ledger</h2><p>Invoice balances for this student.</p></div></div>
+  <div class="table-wrap"><table class="student-table"><thead><tr><th>RECEIPT</th><th>FEE TYPE</th><th>DUE</th><th>BALANCE</th><th>STATUS</th></tr></thead><tbody>{% for invoice in invoices %}<tr><td><a class="text-action subject-code" href="{% url 'academics:fee_detail' invoice.pk %}">{{ invoice.receipt_number|slice:":12" }}</a></td><td>{{ invoice.get_fee_type_display }}</td><td>{{ invoice.due_date|date:"M j, Y" }}</td><td>{{ invoice.balance|floatformat:2 }}</td><td><span class="result-pill result-{{ invoice.status|lower }}">{{ invoice.status|title }}</span></td></tr>{% empty %}<tr><td colspan="5">No invoices are recorded.</td></tr>{% endfor %}</tbody></table></div>
+</section>{% endif %}
+<section class="panel student-academic-panel">
+  <div class="panel-heading"><div><span class="panel-kicker">PRIVATE FILES</span><h2>Student documents</h2><p>Files are delivered through an authorization-checked download endpoint.</p></div>{% if can_upload_documents %}<a class="button button-secondary" href="{% url 'students:document_upload' student.pk %}">＋ Upload document</a>{% endif %}</div>
+  <div class="recent-mark-list">{% for document in documents %}<a class="recent-mark-item" href="{% url 'students:document_download' student.pk document.pk %}"><span class="student-avatar" aria-hidden="true">▤</span><span class="recent-mark-person"><strong>{{ document.title }}</strong><small>Uploaded {{ document.uploaded_at|date:"M j, Y" }}</small></span><span class="text-action">Download →</span></a>{% empty %}<div class="empty-state compact-empty"><strong>No documents uploaded</strong><p>Authorized uploads appear here.</p></div>{% endfor %}</div>
+</section>
+{% endblock %}

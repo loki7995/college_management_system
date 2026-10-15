@@ -1,0 +1,20 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'students:dashboard' %}">Dashboard</a><span>/</span>{{ page_title }}{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>COLLEGE WORKSPACE</div><h1>{{ page_title }}</h1><p>Complete the fields below. Changes are validated before saving.</p></div></section>
+<section class="panel form-panel">
+  <form method="post" novalidate>{% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}
+      <div class="form-field {% if field.errors %}has-error{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}
+      </div>
+    {% endfor %}
+    <div class="form-actions"><button class="button button-primary" type="submit">{{ submit_label }}</button><a class="button button-secondary" href="javascript:history.back()">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

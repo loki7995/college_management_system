@@ -1,0 +1,10 @@
+{% extends 'accounts/auth_base.html' %}
+{% block title %}Access denied{% endblock %}
+{% block content %}
+<section class="auth-card auth-message-card">
+  <span class="auth-kicker">PERMISSION REQUIRED</span>
+  <h1>Access denied</h1>
+  <p class="auth-intro">Your account does not have permission to view this page. If you believe this is a mistake, contact a college administrator.</p>
+  <a class="button button-primary" href="{% url 'students:dashboard' %}">Return to your dashboard</a>
+</section>
+{% endblock %}

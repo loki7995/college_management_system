@@ -1,0 +1,38 @@
+{% extends 'students/base.html' %}
+{% block title %}Student directory{% endblock %}
+{% block breadcrumb %}Students{% endblock %}
+{% block topbar_context %}Manage registered student records{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow"><span class="eyebrow-line"></span>STUDENT DIRECTORY</div><h1>Students</h1><p>{% if is_faculty %}Browse students in your assigned department.{% else %}Search and manage registered student records.{% endif %}</p></div>
+  <div class="heading-actions"><a class="button button-secondary" href="{% url 'students:dashboard' %}">← Dashboard</a>{% if is_college_admin %}<a class="button button-primary" href="{% url 'students:create' %}"><span class="button-plus">＋</span> Add student</a>{% endif %}</div>
+</section>
+<section class="panel directory-panel">
+  <div class="panel-heading"><div><span class="panel-kicker">STUDENT RECORDS</span><h2>All students</h2><p>Browse the full student directory.</p></div><span class="record-count">{{ student_count }} shown</span></div>
+  <form method="get" class="toolbar" role="search">
+    <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" name="q" value="{{ query }}" placeholder="Search name, roll number, email…" aria-label="Search students"><button class="search-clear" type="submit">Search</button></label>
+    <select name="department" aria-label="Filter by department"><option value="">All departments</option>{% for item in department_choices %}<option value="{{ item }}" {% if selected_department == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+    <select name="academic_year" aria-label="Filter by academic year"><option value="">All academic years</option>{% for item in academic_year_choices %}<option value="{{ item }}" {% if selected_academic_year == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+    <select name="status" aria-label="Filter by status"><option value="all" {% if selected_status == 'all' %}selected{% endif %}>All statuses</option><option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option><option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option></select>
+    <button class="button button-primary filter-submit" type="submit">Filter</button>
+    {% if query or selected_department or selected_academic_year or selected_status != 'all' %}<a class="clear-filter" href="{% url 'students:list' %}">Clear all</a>{% endif %}
+    {% if is_college_admin %}<a class="button button-secondary toolbar-add" href="{% url 'students:create' %}">＋ <span>New student</span></a>{% endif %}
+  </form>
+  {% if students %}
+  <div class="table-wrap">
+    <table class="student-table student-directory-table"><thead><tr><th>STUDENT</th><th>ROLL NUMBER</th><th>DEPARTMENT</th><th>ACADEMIC YEAR</th><th>EMAIL</th><th>STATUS</th><th></th></tr></thead><tbody>
+      {% for student in students %}
+      <tr>
+        <td><a class="student-cell" href="{% url 'students:detail' student.pk %}"><span class="student-avatar">{{ student.full_name|slice:":1"|upper }}</span><span><strong>{{ student.full_name }}</strong><small>{{ student.email }}</small></span></a></td>
+        <td><span class="roll-chip">{{ student.roll_number }}</span></td><td>{{ student.department }}</td><td>{{ student.academic_year }}</td><td class="table-email">{{ student.email }}</td><td><span class="student-status status-{% if student.is_active %}active{% else %}inactive{% endif %}">{% if student.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+        <td><div class="row-actions"><a href="{% url 'students:detail' student.pk %}" aria-label="View {{ student.full_name }}" title="View">↗</a>{% if is_college_admin %}<a href="{% url 'students:update' student.pk %}" aria-label="Edit {{ student.full_name }}" title="Edit">✎</a>{% endif %}</div></td>
+      </tr>
+      {% endfor %}
+    </tbody></table>
+  </div>
+  {% else %}
+  <div class="empty-state"><span class="empty-icon">♙</span><strong>{% if query or selected_department or selected_academic_year or selected_status != 'all' %}No students match these filters{% else %}Your student directory is ready{% endif %}</strong><p>{% if query or selected_department or selected_academic_year or selected_status != 'all' %}Adjust or clear the search and filters, or check the other student status.{% else %}Add the first student to start building your directory.{% endif %}</p>{% if is_college_admin and not query and not selected_department and not selected_academic_year and selected_status == 'all' %}<a class="button button-primary" href="{% url 'students:create' %}">＋ Add your first student</a>{% endif %}</div>
+  {% endif %}
+  <div class="table-foot"><span>Showing <strong>{{ page_obj.start_index|default:0 }}–{{ page_obj.end_index|default:0 }}</strong> of {{ student_count }} student{{ student_count|pluralize }}</span>{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Student directory pagination">{% if page_obj.has_previous %}<a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous page">‹</a>{% else %}<span class="page-disabled">‹</span>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next page">›</a>{% else %}<span class="page-disabled">›</span>{% endif %}</nav>{% else %}<span>Sorted by student name</span>{% endif %}</div>
+</section>
+{% endblock %}

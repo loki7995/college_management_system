@@ -1,0 +1,24 @@
+{% extends 'students/base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'students:list' %}">Students</a><span>/</span>{{ page_title }}{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>STUDENT DIRECTORY</div><h1>{{ page_title }}</h1><p>Enter the student’s details below. Required fields are marked.</p></div></section>
+<section class="panel form-panel">
+  <div class="form-intro"><span class="form-intro-icon">♙</span><div><h2>Student information</h2><p>Keep records accurate and up to date.</p></div></div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-alert" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <div class="field-group {% if field.name == 'address' %}field-wide{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="required">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="form-actions"><a class="button button-secondary" href="{% if student %}{% url 'students:detail' student.pk %}{% else %}{% url 'students:list' %}{% endif %}">Cancel</a><button class="button button-primary" type="submit">{{ submit_label }} <span>→</span></button></div>
+  </form>
+</section>
+{% endblock %}

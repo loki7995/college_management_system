@@ -1,0 +1,7 @@
+{% extends 'students/base.html' %}
+{% block title %}{% if target_active %}Activate{% else %}Deactivate{% endif %} faculty{% endblock %}
+{% block breadcrumb %}<a href="{% url 'accounts:faculty_list' %}">Faculty</a><span>/</span>Confirm account status{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>FACULTY ACCOUNT</div><h1>Confirm account status</h1><p>Review this access change before continuing.</p></div></section>
+<section class="panel confirm-panel"><span class="confirm-icon">!</span><h2>{% if target_active %}Activate{% else %}Deactivate{% endif %} {{ profile.user.get_full_name|default:profile.user.get_username }}?</h2><p>{% if target_active %}This faculty account will be able to sign in again.{% else %}This immediately prevents the account from signing in. Its profile and academic records remain unchanged.{% endif %}</p><form method="post">{% csrf_token %}<a class="button button-secondary" href="{% url 'accounts:faculty_detail' profile.pk %}">Cancel</a><button class="button {% if target_active %}button-primary{% else %}button-danger{% endif %}" type="submit">Confirm {% if target_active %}activation{% else %}deactivation{% endif %}</button></form></section>
+{% endblock %}

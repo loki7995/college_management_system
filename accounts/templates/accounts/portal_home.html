@@ -1,0 +1,39 @@
+{% extends 'accounts/auth_base.html' %}
+{% block title %}Choose a login portal{% endblock %}
+{% block body_class %}portal-page{% endblock %}
+{% block content %}
+<section class="portal-welcome">
+  <span class="auth-kicker">STUDENT MANAGEMENT SYSTEM</span>
+  <h1>Welcome to K V S R College</h1>
+  <p>Choose your secure portal to continue.</p>
+</section>
+<section class="portal-grid" aria-label="Choose your login portal">
+  <article class="portal-card portal-admin">
+    <span class="portal-icon" aria-hidden="true">⌂</span>
+    <span class="auth-kicker">MANAGE THE COLLEGE</span>
+    <h2>Admin Portal</h2>
+    <p>Manage students, faculty accounts, and academic records.</p>
+    <a class="button button-primary" href="{% url 'accounts:admin_login' %}">Login as Admin <span aria-hidden="true">→</span></a>
+  </article>
+  <article class="portal-card portal-student">
+    <span class="portal-icon" aria-hidden="true">♙</span>
+    <span class="auth-kicker">YOUR COLLEGE JOURNEY</span>
+    <h2>Student Portal</h2>
+    <p>View your student profile and examination results.</p>
+    <a class="button button-primary" href="{% url 'accounts:student_login' %}">Login as Student <span aria-hidden="true">→</span></a>
+  </article>
+  <article class="portal-card portal-faculty">
+    <span class="portal-icon" aria-hidden="true">▤</span>
+    <span class="auth-kicker">TEACHING WORKSPACE</span>
+    <h2>Faculty Portal</h2>
+    <p>Access student records and academic marks in your department.</p>
+    <a class="button button-primary" href="{% url 'accounts:faculty_login' %}">Login as Faculty <span aria-hidden="true">→</span></a>
+  </article>
+</section>
+{% if request.user.is_authenticated %}
+<div class="portal-signed-in">
+  <span>Signed in as {{ request.user.get_username }}. If this account is not configured, contact an administrator.</span>
+  <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+</div>
+{% endif %}
+{% endblock %}

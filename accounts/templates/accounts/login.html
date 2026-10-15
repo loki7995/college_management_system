@@ -1,0 +1,27 @@
+{% extends 'accounts/auth_base.html' %}
+{% block title %}{% if portal_label %}{{ portal_label }} portal{% else %}Sign in{% endif %}{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <a class="auth-back-link" href="{{ portal_home_url }}">← All login portals</a>
+  <span class="auth-kicker">{% if portal_label %}{{ portal_label|upper }} PORTAL{% else %}SECURE COLLEGE WORKSPACE{% endif %}</span>
+  <h1>{% if portal_label %}{{ portal_label }} sign in{% else %}Welcome back{% endif %}</h1>
+  <p class="auth-intro">Use the username and password provided by your college administrator.</p>
+  <form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <div class="field-group">
+      {{ form.username.label_tag }}
+      {{ form.username }}
+      {% for error in form.username.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}
+    </div>
+    <div class="field-group">
+      {{ form.password.label_tag }}
+      {{ form.password }}
+      {% for error in form.password.errors %}<small class="field-error" role="alert">{{ error }}</small>{% endfor %}
+    </div>
+    <button class="button button-primary auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
+  </form>
+  <p class="auth-help">Need access or a password reset? Contact your college administrator.</p>
+</section>
+{% endblock %}
