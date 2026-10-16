@@ -14,6 +14,7 @@ import os
 import secrets
 from pathlib import Path
 
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -31,23 +32,32 @@ if not DEBUG and not os.getenv('DJANGO_SECRET_KEY'):
     raise ImproperlyConfigured(
         'Set DJANGO_SECRET_KEY to a stable secret before disabling DEBUG.'
     )
-if not DEBUG and not os.getenv('DJANGO_ALLOWED_HOSTS'):
-    raise ImproperlyConfigured(
-        'Set DJANGO_ALLOWED_HOSTS to the deployment hostnames before disabling DEBUG.'
-    )
-ALLOWED_HOSTS = [
+render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME', '').strip()
+configured_hosts = [
     host.strip()
-    for host in os.getenv(
-        'DJANGO_ALLOWED_HOSTS',
-        'localhost,127.0.0.1,testserver',
-    ).split(',')
+    for host in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
     if host.strip()
 ]
-CSRF_TRUSTED_ORIGINS = [
+if not DEBUG and '*' in configured_hosts:
+    raise ImproperlyConfigured(
+        'Do not use a wildcard in DJANGO_ALLOWED_HOSTS when DEBUG=False.'
+    )
+if not DEBUG and not (configured_hosts or render_hostname):
+    raise ImproperlyConfigured(
+        'Set DJANGO_ALLOWED_HOSTS or deploy with RENDER_EXTERNAL_HOSTNAME before disabling DEBUG.'
+    )
+ALLOWED_HOSTS = list(dict.fromkeys(
+    configured_hosts
+    + ([render_hostname] if render_hostname else [])
+    + (['localhost', '127.0.0.1', 'testserver'] if DEBUG else [])
+))
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(
     origin.strip()
     for origin in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
     if origin.strip()
-]
+))
+if render_hostname:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{render_hostname}')
 
 
 # Application definition
@@ -66,6 +76,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -125,19 +136,34 @@ ACADEMIC_MARKS_RULES = {
     ),
 }
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": DB_NAME,
-        "USER": DB_USER,
-        "PASSWORD": DB_PASSWORD,
-        "HOST": DB_HOST,
-        "PORT": DB_PORT,
-        "OPTIONS": {
-            "charset": "utf8mb4",
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+if not DEBUG:
+    if not DATABASE_URL:
+        raise ImproperlyConfigured(
+            'Set DATABASE_URL for the production database; local MySQL is not used when DEBUG=False.'
+        )
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": DB_NAME,
+            "USER": DB_USER,
+            "PASSWORD": DB_PASSWORD,
+            "HOST": DB_HOST,
+            "PORT": DB_PORT,
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
         },
     }
-}
 
 
 # Password validation
@@ -174,9 +200,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 
 SESSION_COOKIE_AGE = 30 * 60
 SESSION_SAVE_EVERY_REQUEST = True
@@ -210,6 +245,9 @@ DEFAULT_FROM_EMAIL = os.getenv(
     'no-reply@college.example',
 )
 SECURE_SSL_REDIRECT = not DEBUG
+SECURE_PROXY_SSL_HEADER = (
+    ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG else None
+)
 SECURE_HSTS_SECONDS = int(
     os.getenv('DJANGO_SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000')
 )

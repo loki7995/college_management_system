@@ -7,4 +7,9 @@ __pycache__/
 .env.*
 !.env.example
 staticfiles/
+media/
 *.sqlite3
+*.sql
+*.sql.gz
+*.dump
+*.bak
