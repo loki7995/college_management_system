@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from accounts.models import UserProfile
 from accounts.permissions import get_user_role, visible_students, writable_students
+from students.departments import DEPARTMENT_CHOICES, department_choices
 from students.models import Student
 
 from .models import (
@@ -104,14 +105,23 @@ class ExaminationMarkForm(forms.ModelForm):
 
 
 class CourseForm(forms.ModelForm):
+    department = forms.ChoiceField(
+        choices=DEPARTMENT_CHOICES,
+        error_messages={'required': 'Select the course department.'},
+    )
+
     class Meta:
         model = Course
         fields = ('code', 'name', 'department', 'credits', 'is_active')
         widgets = {
             'code': forms.TextInput(attrs={'placeholder': 'e.g. CS201'}),
             'name': forms.TextInput(attrs={'placeholder': 'Course name'}),
-            'department': forms.TextInput(attrs={'placeholder': 'Department'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        existing_department = self.instance.department if self.instance.pk else ''
+        self.fields['department'].choices = department_choices(existing_department)
 
 
 class CourseEnrollmentForm(forms.ModelForm):

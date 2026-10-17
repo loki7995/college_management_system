@@ -268,7 +268,6 @@ def student_detail(request, pk):
         average_percentage=Avg('percentage'),
     )
     recent_marks = student.examination_marks.order_by('-created_at', '-pk')[:10]
-    from accounts.views import _take_account_setup_url
     enrollments = CourseEnrollment.objects.filter(student=student).select_related(
         'course', 'semester'
     )
@@ -311,11 +310,6 @@ def student_detail(request, pk):
             ),
             'has_marks': bool(mark_summary['record_count']),
             'has_account': hasattr(student, 'user_profile'),
-            'student_password_setup_url': (
-                _take_account_setup_url(request, f'student-{student.pk}')
-                if get_user_role(request.user) == UserProfile.Role.ADMIN
-                else None
-            ),
             'pass_percentage': (
                 round(mark_summary['passed_count'] * 100 / mark_summary['record_count'], 1)
                 if mark_summary['record_count']

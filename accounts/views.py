@@ -1,5 +1,7 @@
 import hashlib
 import hmac
+import logging
+import smtplib
 from datetime import timedelta
 
 from django.contrib import messages
@@ -7,13 +9,15 @@ from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordResetView
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.core.mail.message import BadHeaderError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils import timezone
@@ -46,6 +50,8 @@ ROLE_LABELS = {
     UserProfile.Role.STUDENT: 'Student',
     UserProfile.Role.FACULTY: 'Faculty',
 }
+
+logger = logging.getLogger(__name__)
 
 
 @login_not_required
@@ -187,6 +193,72 @@ class PortalLoginView(LoginView):
         return context
 
 
+def _consume_password_reset_limit(identifier, ip_address, maximum_attempts):
+    identifier_hash = hmac.new(
+        str(settings.SECRET_KEY).encode(),
+        f'password-reset:{identifier}'.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    now = timezone.now()
+    with transaction.atomic():
+        attempt, _ = LoginAttempt.objects.select_for_update().get_or_create(
+            identifier_hash=identifier_hash,
+            ip_address=ip_address,
+            defaults={'failures': 0, 'window_started_at': now},
+        )
+        if attempt.locked_until and attempt.locked_until > now:
+            return False
+        if attempt.window_started_at < now - timedelta(minutes=15):
+            attempt.failures = 0
+            attempt.window_started_at = now
+            attempt.locked_until = None
+        attempt.failures += 1
+        if attempt.failures >= maximum_attempts:
+            attempt.locked_until = now + timedelta(minutes=15)
+        attempt.save(
+            update_fields=[
+                'failures',
+                'window_started_at',
+                'locked_until',
+                'updated_at',
+            ]
+        )
+        return attempt.failures <= maximum_attempts
+
+
+class ThrottledPasswordResetView(PasswordResetView):
+    template_name = 'accounts/password_reset_form.html'
+    email_template_name = 'accounts/password_reset_email.txt'
+    subject_template_name = 'accounts/password_reset_subject.txt'
+    success_url = reverse_lazy('accounts:password_reset_done')
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            email = form.cleaned_data['email'].strip().casefold()
+            ip_address = request.META.get('REMOTE_ADDR') or '0.0.0.0'
+            email_allowed = _consume_password_reset_limit(
+                f'email:{email}',
+                ip_address,
+                maximum_attempts=5,
+            )
+            ip_allowed = _consume_password_reset_limit(
+                'all-addresses',
+                ip_address,
+                maximum_attempts=20,
+            )
+            if not (email_allowed and ip_allowed):
+                return redirect(self.get_success_url())
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except (BadHeaderError, OSError, smtplib.SMTPException, ValueError):
+            logger.error('Password-reset email delivery failed.')
+            return redirect(self.get_success_url())
+
+
 def permission_denied(request, exception=None):
     return render(request, 'accounts/403.html', status=403)
 
@@ -293,20 +365,35 @@ def _account_setup_url(request, user):
     return request.build_absolute_uri(path)
 
 
-def _take_account_setup_url(request, key):
-    urls = request.session.get('account_setup_urls', {})
-    url = urls.pop(key, None)
-    if urls:
-        request.session['account_setup_urls'] = urls
-    else:
-        request.session.pop('account_setup_urls', None)
-    return url
+class AccountEmailDeliveryError(Exception):
+    pass
 
 
-def _store_account_setup_url(request, key, url):
-    urls = request.session.get('account_setup_urls', {})
-    urls[key] = url
-    request.session['account_setup_urls'] = urls
+def _send_account_setup_email(request, user, role_label):
+    setup_url = _account_setup_url(request, user)
+    subject = f'Set up your {role_label} college portal account'
+    body = (
+        f'Hello {user.get_full_name() or user.get_username()},\n\n'
+        'An account has been created for you in the college portal. '
+        'Use the secure, single-use link below to choose your password:\n\n'
+        f'{setup_url}\n\n'
+        'This link expires after the configured password-reset period. '
+        'If you were not expecting this message, contact your college administrator.'
+    )
+    try:
+        sent_count = send_mail(
+            subject,
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+    except (BadHeaderError, OSError, smtplib.SMTPException, ValueError) as error:
+        logger.error('Account password-setup email delivery failed.')
+        raise AccountEmailDeliveryError from error
+    if sent_count != 1:
+        logger.error('Account password-setup email was not accepted by the email backend.')
+        raise AccountEmailDeliveryError
 
 
 @roles_required(UserProfile.Role.ADMIN, UserProfile.Role.REGISTRAR)
@@ -369,20 +456,16 @@ def faculty_create(request):
                 profile = form.create_account()
                 record_change(request, profile.user, 'CREATE')
                 record_change(request, profile, 'CREATE')
-        except (IntegrityError, ValidationError):
+                _send_account_setup_email(request, profile.user, 'faculty')
+        except (AccountEmailDeliveryError, IntegrityError, ValidationError):
             form.add_error(
                 None,
-                'The faculty account could not be created. Check that the username and email are unique, then try again.',
+                'The faculty account was not created because account setup could not be completed. Verify email delivery settings and try again.',
             )
         else:
-            _store_account_setup_url(
-                request,
-                f'faculty-{profile.pk}',
-                _account_setup_url(request, profile.user),
-            )
             messages.success(
                 request,
-                'Faculty account created. Share the one-time password setup link with the faculty member using a secure channel.',
+                'Faculty account created. A secure password-setup email was sent to the registered address.',
             )
             return redirect('accounts:faculty_detail', pk=profile.pk)
     return render(
@@ -402,13 +485,7 @@ def faculty_detail(request, pk):
     return render(
         request,
         'accounts/faculty_detail.html',
-        {
-            'profile': profile,
-            'password_setup_url': _take_account_setup_url(
-                request,
-                f'faculty-{profile.pk}',
-            ),
-        },
+        {'profile': profile},
     )
 
 
@@ -489,20 +566,16 @@ def student_account_create(request, pk):
                 profile = form.create_account()
                 record_change(request, profile.user, 'CREATE')
                 record_change(request, profile, 'CREATE')
-        except (IntegrityError, ValidationError):
+                _send_account_setup_email(request, profile.user, 'student')
+        except (AccountEmailDeliveryError, IntegrityError, ValidationError):
             form.add_error(
                 None,
-                'The student login could not be created. Check the username and account details, then try again.',
+                'The student login was not created because account setup could not be completed. Verify email delivery settings and try again.',
             )
         else:
-            _store_account_setup_url(
-                request,
-                f'student-{student.pk}',
-                _account_setup_url(request, profile.user),
-            )
             messages.success(
                 request,
-                'Student login created. Share the one-time password setup link with the student using a secure channel.',
+                'Student login created. A secure password-setup email was sent to the registered address.',
             )
             return redirect('students:detail', pk=student.pk)
     return render(

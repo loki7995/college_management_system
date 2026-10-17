@@ -229,8 +229,17 @@ SECURE_REFERRER_POLICY = 'same-origin'
 # through the environment for a deployment that sends mail.
 EMAIL_BACKEND = os.getenv(
     'DJANGO_EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend',
+    (
+        'django.core.mail.backends.console.EmailBackend'
+        if DEBUG
+        else 'django.core.mail.backends.smtp.EmailBackend'
+    ),
 )
+if not DEBUG and EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend':
+    raise ImproperlyConfigured(
+        'Do not use the console email backend when DEBUG=False; '
+        'configure SMTP to keep password links out of deployment logs.'
+    )
 EMAIL_HOST = os.getenv('DJANGO_EMAIL_HOST', '')
 EMAIL_PORT = int(os.getenv('DJANGO_EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('DJANGO_EMAIL_USER', '')
@@ -243,6 +252,9 @@ EMAIL_USE_TLS = os.getenv('DJANGO_EMAIL_USE_TLS', 'True').lower() in (
 DEFAULT_FROM_EMAIL = os.getenv(
     'DJANGO_DEFAULT_FROM_EMAIL',
     'no-reply@college.example',
+)
+PASSWORD_RESET_TIMEOUT = int(
+    os.getenv('DJANGO_PASSWORD_RESET_TIMEOUT', str(3 * 24 * 60 * 60))
 )
 SECURE_SSL_REDIRECT = not DEBUG
 SECURE_PROXY_SSL_HEADER = (

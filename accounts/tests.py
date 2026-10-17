@@ -1,9 +1,12 @@
 from decimal import Decimal
+import re
+from unittest.mock import patch
 from urllib.parse import urlsplit
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from academics.models import ExaminationMark
@@ -469,7 +472,9 @@ class PortalAndAccountManagementTests(TestCase):
         self.assertContains(response, 'not configured for the college portal')
         self.assertNotIn('_auth_user_id', self.client.session)
 
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_admin_can_create_search_and_deactivate_faculty_account(self):
+        mail.outbox.clear()
         self.client.force_login(self.admin)
         create_url = reverse('accounts:faculty_create')
         response = self.client.post(
@@ -479,7 +484,7 @@ class PortalAndAccountManagementTests(TestCase):
                 'first_name': 'New',
                 'last_name': 'Faculty',
                 'email': 'new.faculty@example.edu',
-                'department': 'Science',
+                'department': 'Computer Science and Engineering (CSE)',
                 'is_active': 'on',
             },
         )
@@ -490,17 +495,25 @@ class PortalAndAccountManagementTests(TestCase):
             fetch_redirect_response=False,
         )
         self.assertEqual(profile.role, UserProfile.Role.FACULTY)
-        self.assertEqual(profile.department, 'Science')
+        self.assertEqual(profile.department, 'Computer Science and Engineering (CSE)')
         self.assertFalse(profile.user.is_staff)
         self.assertFalse(profile.user.is_superuser)
         self.assertFalse(profile.user.has_usable_password())
-        self.assertContains(
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(profile.user.email, mail.outbox[0].to)
+        setup_url = re.search(r'https?://\S+', mail.outbox[0].body).group(0)
+        self.assertIn('password/reset/confirm/', setup_url)
+        self.assertNotContains(
             self.client.get(reverse('accounts:faculty_detail', args=[profile.pk])),
             'password/reset/confirm/',
         )
         listing = self.client.get(
             reverse('accounts:faculty_list'),
-            {'q': 'new-faculty', 'department': 'Science', 'status': 'active'},
+            {
+                'q': 'new-faculty',
+                'department': 'Computer Science and Engineering (CSE)',
+                'status': 'active',
+            },
         )
         self.assertContains(listing, 'new-faculty')
         self.assertEqual(listing.context['page_obj'].paginator.count, 1)
@@ -523,6 +536,25 @@ class PortalAndAccountManagementTests(TestCase):
         profile.user.refresh_from_db()
         self.assertFalse(profile.user.is_active)
 
+    def test_faculty_creation_rejects_unlisted_department_values(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('accounts:faculty_create'),
+            {
+                'username': 'invalid-department-faculty',
+                'email': 'invalid.department@example.edu',
+                'department': 'Unlisted Department',
+                'is_active': 'on',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('department', response.context['form'].errors)
+        self.assertFalse(
+            get_user_model().objects.filter(
+                username='invalid-department-faculty'
+            ).exists()
+        )
+
     def test_admin_can_edit_existing_faculty_profile(self):
         self.client.force_login(self.admin)
         response = self.client.post(
@@ -532,7 +564,7 @@ class PortalAndAccountManagementTests(TestCase):
                 'first_name': 'Updated',
                 'last_name': 'Faculty',
                 'email': 'updated.faculty@example.edu',
-                'department': 'Science',
+                'department': 'Electronics and Communication Engineering (ECE)',
                 'is_active': 'on',
             },
         )
@@ -543,7 +575,10 @@ class PortalAndAccountManagementTests(TestCase):
         self.faculty.refresh_from_db()
         self.faculty_profile.refresh_from_db()
         self.assertEqual(self.faculty.first_name, 'Updated')
-        self.assertEqual(self.faculty_profile.department, 'Science')
+        self.assertEqual(
+            self.faculty_profile.department,
+            'Electronics and Communication Engineering (ECE)',
+        )
 
     def test_admin_can_create_a_student_from_the_existing_student_form(self):
         self.client.force_login(self.admin)
@@ -553,7 +588,7 @@ class PortalAndAccountManagementTests(TestCase):
                 'roll_number': 'ADMIN-ADDED-01',
                 'full_name': 'Admin Added Student',
                 'email': 'admin.added@example.edu',
-                'department': 'Arts',
+                'department': 'Information Technology (IT)',
                 'academic_year': '2026-2027',
             },
         )
@@ -565,7 +600,9 @@ class PortalAndAccountManagementTests(TestCase):
         self.assertEqual(student.full_name, 'Admin Added Student')
         self.assertFalse(UserProfile.objects.filter(student=student).exists())
 
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_admin_can_create_student_login_and_use_one_time_password_link(self):
+        mail.outbox.clear()
         self.client.force_login(self.admin)
         create_url = reverse(
             'accounts:student_account_create',
@@ -588,11 +625,9 @@ class PortalAndAccountManagementTests(TestCase):
         self.assertFalse(user.is_superuser)
         self.assertFalse(user.has_usable_password())
 
-        detail = self.client.get(
-            reverse('students:detail', args=[self.unlinked_student.pk])
-        )
-        setup_url = detail.context['student_password_setup_url']
-        self.assertTrue(setup_url)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(self.unlinked_student.email, mail.outbox[0].to)
+        setup_url = re.search(r'https?://\S+', mail.outbox[0].body).group(0)
         setup_path = urlsplit(setup_url).path
         setup_response = self.client.get(setup_path, follow=True)
         self.assertEqual(setup_response.status_code, 200)
@@ -612,6 +647,102 @@ class PortalAndAccountManagementTests(TestCase):
         self.assertFalse(user.is_superuser)
         self.assertFalse(user.is_staff)
         self.assertFalse(self.client.get(setup_form_path).context['validlink'])
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_student_account_is_not_created_when_setup_email_delivery_fails(self):
+        self.client.force_login(self.admin)
+        with patch('accounts.views.send_mail', side_effect=OSError):
+            response = self.client.post(
+                reverse(
+                    'accounts:student_account_create',
+                    args=[self.unlinked_student.pk],
+                ),
+                {'username': self.unlinked_student.roll_number},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'was not created because account setup')
+        self.assertFalse(
+            UserProfile.objects.filter(student=self.unlinked_student).exists()
+        )
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_forgot_password_is_generic_and_completes_single_use_reset(self):
+        mail.outbox.clear()
+        response = self.client.post(
+            reverse('accounts:password_reset'),
+            {'email': self.admin.email},
+        )
+        self.assertRedirects(response, reverse('accounts:password_reset_done'))
+        self.assertEqual(len(mail.outbox), 1)
+
+        reset_url = re.search(r'https?://\S+', mail.outbox[0].body).group(0)
+        reset_page = self.client.get(urlsplit(reset_url).path, follow=True)
+        self.assertTrue(reset_page.context['validlink'])
+        reset_form_path = urlsplit(reset_page.redirect_chain[-1][0]).path
+        new_password = 'Admin-reset-new-password-628!'
+        response = self.client.post(
+            reset_form_path,
+            {'new_password1': new_password, 'new_password2': new_password},
+        )
+        self.assertRedirects(
+            response,
+            reverse('accounts:password_reset_complete'),
+        )
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.check_password(new_password))
+        self.assertFalse(
+            self.client.get(urlsplit(reset_url).path, follow=True)
+            .context['validlink']
+        )
+
+        mail.outbox.clear()
+        response = self.client.post(
+            reverse('accounts:password_reset'),
+            {'email': 'unknown.person@example.edu'},
+        )
+        self.assertRedirects(response, reverse('accounts:password_reset_done'))
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_forgot_password_requests_are_throttled(self):
+        mail.outbox.clear()
+        for _ in range(6):
+            response = self.client.post(
+                reverse('accounts:password_reset'),
+                {'email': self.admin.email},
+            )
+            self.assertRedirects(
+                response,
+                reverse('accounts:password_reset_done'),
+            )
+        self.assertEqual(len(mail.outbox), 5)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_forgot_password_rejects_malformed_email_without_sending(self):
+        mail.outbox.clear()
+        response = self.client.post(
+            reverse('accounts:password_reset'),
+            {'email': 'not-an-email'},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('email', response.context['form'].errors)
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        PASSWORD_RESET_TIMEOUT=-1,
+    )
+    def test_expired_password_reset_link_is_not_accepted(self):
+        mail.outbox.clear()
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('accounts:password_reset'),
+            {'email': self.admin.email},
+        )
+        self.assertRedirects(response, reverse('accounts:password_reset_done'))
+        reset_url = re.search(r'https?://\S+', mail.outbox[-1].body).group(0)
+        reset_page = self.client.get(urlsplit(reset_url).path, follow=True)
+        self.assertFalse(reset_page.context['validlink'])
 
     def test_faculty_cannot_access_administrator_account_management(self):
         self.client.force_login(self.faculty)

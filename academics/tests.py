@@ -12,7 +12,7 @@ from django.utils import timezone
 from accounts.models import UserProfile
 from students.models import Student
 
-from .forms import ExaminationMarkForm
+from .forms import CourseForm, ExaminationMarkForm
 from .grading import calculate_outcome
 from .models import (
     Announcement,
@@ -140,6 +140,36 @@ class MarksRulesTests(TestCase):
         self.assertEqual(mark.student_id, self.student.pk)
         self.assertEqual(self.student.examination_marks.get(), mark)
         self.assertEqual(ExaminationMark._meta.get_field('student').remote_field.model, Student)
+
+
+class DepartmentDropdownTests(TestCase):
+    def test_course_form_rejects_unlisted_departments_and_keeps_legacy_edit_values(self):
+        invalid_form = CourseForm(
+            {
+                'code': 'NEW101',
+                'name': 'New Course',
+                'department': 'Unlisted Department',
+                'credits': 3,
+            }
+        )
+        self.assertFalse(invalid_form.is_valid())
+        self.assertIn('department', invalid_form.errors)
+
+        course = Course.objects.create(
+            code='OLD101',
+            name='Legacy Course',
+            department='Legacy Department',
+        )
+        edit_form = CourseForm(
+            {
+                'code': course.code,
+                'name': course.name,
+                'department': 'Legacy Department',
+                'credits': course.credits,
+            },
+            instance=course,
+        )
+        self.assertTrue(edit_form.is_valid(), edit_form.errors)
 
 
 class MarksWorkflowTests(TestCase):

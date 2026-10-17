@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
+from students.departments import DEPARTMENT_CHOICES, department_choices
+
 from .models import UserProfile
 
 
@@ -13,12 +15,18 @@ class FacultyAccountForm(forms.Form):
     first_name = forms.CharField(max_length=150, required=False)
     last_name = forms.CharField(max_length=150, required=False)
     email = forms.EmailField()
-    department = forms.CharField(max_length=100)
+    department = forms.ChoiceField(
+        choices=DEPARTMENT_CHOICES,
+        error_messages={'required': 'Select the faculty member’s department.'},
+    )
     is_active = forms.BooleanField(required=False, initial=True)
 
     def __init__(self, *args, profile=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.profile = profile
+        self.fields['department'].choices = department_choices(
+            profile.department if profile is not None else ''
+        )
         if profile is not None:
             self.initial.update(
                 {
@@ -51,10 +59,7 @@ class FacultyAccountForm(forms.Form):
         return email
 
     def clean_department(self):
-        department = ' '.join(self.cleaned_data['department'].split())
-        if not department:
-            raise forms.ValidationError('Enter the faculty member’s department.')
-        return department
+        return self.cleaned_data['department']
 
     def save(self):
         if self.profile is None:

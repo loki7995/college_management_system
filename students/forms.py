@@ -1,10 +1,16 @@
 from django import forms
 from django.utils import timezone
 
+from .departments import DEPARTMENT_CHOICES, department_choices
 from .models import Student, StudentDocument
 
 
 class StudentForm(forms.ModelForm):
+    department = forms.ChoiceField(
+        choices=DEPARTMENT_CHOICES,
+        error_messages={'required': 'Select the student’s department.'},
+    )
+
     class Meta:
         model = Student
         fields = [
@@ -32,11 +38,15 @@ class StudentForm(forms.ModelForm):
             'full_name': forms.TextInput(attrs={'placeholder': 'e.g. Alex Morgan'}),
             'email': forms.EmailInput(attrs={'placeholder': 'name@college.edu'}),
             'phone_number': forms.TextInput(attrs={'placeholder': '+1 555 010 0200'}),
-            'department': forms.TextInput(attrs={'placeholder': 'e.g. Computer Science'}),
             'academic_year': forms.TextInput(attrs={'placeholder': 'e.g. 2026-2027'}),
             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
             'address': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Street, city, postal code'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        existing_department = self.instance.department if self.instance.pk else ''
+        self.fields['department'].choices = department_choices(existing_department)
 
     def clean_roll_number(self):
         return self.cleaned_data['roll_number'].strip()
@@ -51,7 +61,7 @@ class StudentForm(forms.ModelForm):
         return self.cleaned_data['email'].strip().lower()
 
     def clean_department(self):
-        return self.cleaned_data['department'].strip()
+        return self.cleaned_data['department']
 
     def clean_academic_year(self):
         return self.cleaned_data['academic_year'].strip()

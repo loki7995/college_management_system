@@ -4,7 +4,7 @@
 {% block content %}
 <section class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span>STUDENT ACCOUNT</div><h1>Create student login</h1><p>Link one portal account directly to this student record.</p></div></section>
 <section class="panel form-panel">
-  <div class="form-intro"><span class="form-intro-icon">♙</span><div><h2>{{ student.full_name }} · {{ student.roll_number }}</h2><p>A one-time password setup link is generated after account creation. No password is displayed or stored in plaintext.</p></div></div>
+  <div class="form-intro"><span class="form-intro-icon">♙</span><div><h2>{{ student.full_name }} · {{ student.roll_number }}</h2><p>A secure one-time password-setup email is sent after account creation. No password is displayed or stored in plaintext.</p></div></div>
   <form method="post" novalidate>
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="form-alert" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}

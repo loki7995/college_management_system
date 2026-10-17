@@ -27,7 +27,7 @@ class StudentManagementTests(TestCase):
             'full_name': 'Jordan Lee',
             'email': 'jordan.lee@example.edu',
             'phone_number': '+1 555 010 0200',
-            'department': 'Computer Science',
+            'department': 'Computer Science and Engineering (CSE)',
             'academic_year': '2026-2027',
             'date_of_birth': '2005-04-12',
             'address': '100 College Avenue',
@@ -64,6 +64,28 @@ class StudentManagementTests(TestCase):
         form = StudentForm(self.valid_data(date_of_birth='2999-01-01'))
         self.assertFalse(form.is_valid())
         self.assertIn('Date of birth cannot be in the future.', form.errors['date_of_birth'])
+
+    def test_department_dropdown_accepts_only_standard_values_and_preserves_legacy_edit_values(self):
+        form = StudentForm(self.valid_data(department='Unlisted Department'))
+        self.assertFalse(form.is_valid())
+        self.assertIn('department', form.errors)
+
+        student = Student.objects.create(
+            roll_number='STU-LEGACY-001',
+            full_name='Legacy Department Student',
+            email='legacy.department@example.edu',
+            department='Computer Science',
+            academic_year='2026-2027',
+        )
+        edit_form = StudentForm(
+            self.valid_data(roll_number=student.roll_number, email=student.email),
+            instance=student,
+        )
+        self.assertTrue(edit_form.is_valid(), edit_form.errors)
+        self.assertIn(
+            ('Computer Science', 'Computer Science (existing value)'),
+            edit_form.fields['department'].choices,
+        )
 
     def test_list_search_detail_edit_and_confirmed_delete(self):
         student = Student.objects.create(

@@ -11,8 +11,5 @@
     <div class="detail-item"><span>ACCOUNT CREATED</span><strong>{{ profile.created_at|date:"M j, Y" }}</strong></div><div class="detail-item"><span>LAST PROFILE UPDATE</span><strong>{{ profile.updated_at|date:"M j, Y" }}</strong></div>
   </div>
 </section>
-{% if password_setup_url %}
-<section class="panel setup-link-panel"><div><span class="panel-kicker">ONE-TIME PASSWORD SETUP</span><h2>Share this link securely</h2><p>This link expires and works only once. Give it directly to the faculty member; do not post it publicly.</p><a class="button button-primary setup-link-button" href="{{ password_setup_url }}" target="_blank" rel="noopener">Open password setup link <span aria-hidden="true">↗</span></a><p class="setup-link-url">{{ password_setup_url }}</p></div></section>
-{% endif %}
 <p class="grading-note">This project does not yet model faculty employee IDs, assigned subjects, or class lists.</p>
 {% endblock %}

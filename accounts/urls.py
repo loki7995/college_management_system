@@ -31,6 +31,20 @@ urlpatterns = [
         name='faculty_login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path(
+        'password/reset/',
+        login_not_required(views.ThrottledPasswordResetView.as_view()),
+        name='password_reset',
+    ),
+    path(
+        'password/reset/done/',
+        login_not_required(
+            TemplateView.as_view(
+                template_name='accounts/password_reset_done.html',
+            )
+        ),
+        name='password_reset_done',
+    ),
     path('faculty/', views.faculty_list, name='faculty_list'),
     path('faculty/add/', views.faculty_create, name='faculty_create'),
     path('faculty/<int:pk>/', views.faculty_detail, name='faculty_detail'),
